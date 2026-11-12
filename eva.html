@@ -1,0 +1,2480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEON GENESIS EVANGELION</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700;900&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   EVA — 主色调变量 & 字体系统
+   ============================================================ */
+:root{
+  --bg-black:    #0a0a0c;
+  --bg-deep:     #111114;
+  --eva-purple:  #3d1f5c;
+  --eva-purple-d:#2a1440;
+  --eva-purple-l:#6b3fa0;
+  --eva-red:     #d4202b;
+  --eva-red-d:   #8c1117;
+  --eva-green:   #7cfc00;
+  --eva-green-d: #3d8b00;
+  --nerv-blue:   #0a2463;
+  --lcl-orange:  #ff6b1a;
+  --cream:       #f5f0e8;
+  --cream-dim:   #c8c2b4;
+  --line:        rgba(245,240,232,.14);
+  --mono:        'JetBrains Mono', monospace;
+  --display:     'Bebas Neue', 'Oswald', sans-serif;
+  --cond:        'Oswald', sans-serif;
+  --jp:          'Noto Sans JP', sans-serif;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:var(--bg-black);color:var(--cream);font-family:var(--cond);overflow-x:hidden}
+body{scroll-snap-type:y mandatory;scroll-behavior:smooth}
+::selection{background:var(--eva-green);color:var(--bg-black)}
+
+/* 全局自定义光标：外层跟随坐标，内层负责图片与动画 */
+html,body,body *{cursor:none!important}
+#custom-cursor{position:fixed;left:0;top:0;z-index:9999;width:64px;height:64px;pointer-events:none;opacity:0;will-change:transform}
+#custom-cursor.is-visible{opacity:1}
+#custom-cursor .cursor-visual{--cursor-x:-50%;--cursor-y:-50%;position:absolute;inset:0;background:url('cursor.png') center/contain no-repeat;transform:translate(var(--cursor-x),var(--cursor-y));transform-origin:center;will-change:transform,filter}
+body.page-3 #custom-cursor{width:150px;height:129px}
+body.page-3 #custom-cursor .cursor-visual{--cursor-x:-88%;--cursor-y:-3%;background-image:url('lance.png')}
+body.page-3 #custom-cursor.is-targeting .cursor-visual{filter:drop-shadow(0 0 10px #ff0000);animation:lance-breathe 1.15s ease-in-out infinite}
+#custom-cursor.is-pressing .cursor-visual{animation:cursor-press .16s steps(2,end)}
+body.page-3 #custom-cursor.is-stabbing .cursor-visual{animation:lance-stab .18s steps(2,end)}
+@keyframes cursor-press{0%,100%{transform:translate(var(--cursor-x),var(--cursor-y)) scale(1)}50%{transform:translate(var(--cursor-x),var(--cursor-y)) scale(.72)}}
+@keyframes lance-breathe{0%,100%{transform:translate(var(--cursor-x),var(--cursor-y)) scale(1);filter:drop-shadow(0 0 10px #ff0000)}50%{transform:translate(var(--cursor-x),var(--cursor-y)) scale(1.025);filter:drop-shadow(0 0 13px #ff0000)}}
+@keyframes lance-stab{0%,100%{transform:translate(var(--cursor-x),var(--cursor-y)) scale(1)}45%{transform:translate(calc(var(--cursor-x) + 10px),calc(var(--cursor-y) + 10px)) scale(1.1)}}
+@media(prefers-reduced-motion:reduce){body.page-3 #custom-cursor.is-targeting .cursor-visual{animation:none}}
+
+/* 颗粒噪点叠加 */
+.grain{position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.08;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+/* 扫描线 */
+.scanlines{position:fixed;inset:0;pointer-events:none;z-index:9998;opacity:.04;
+  background:repeating-linear-gradient(to bottom,rgba(255,255,255,.6) 0,rgba(255,255,255,.6) 1px,transparent 1px,transparent 3px);}
+
+/* 侧边导航 */
+.nav{position:fixed;right:28px;top:50%;transform:translateY(-50%);z-index:500;display:flex;flex-direction:column;gap:18px}
+.nav a{width:10px;height:10px;border:1px solid var(--cream);background:transparent;transition:.3s;display:block;opacity:.5}
+.nav a.active,.nav a:hover{background:var(--eva-green);border-color:var(--eva-green);opacity:1;box-shadow:0 0 8px var(--eva-green)}
+
+/* 顶部条 */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:400;display:flex;justify-content:space-between;align-items:center;
+  padding:14px 28px;font-family:var(--mono);font-size:11px;letter-spacing:.15em;color:var(--cream-dim);
+  border-bottom:1px solid var(--line);background:rgba(10,10,12,.55);backdrop-filter:blur(6px)}
+.topbar .left{display:flex;align-items:center;gap:14px}
+.topbar .dot{width:8px;height:8px;background:var(--eva-red);border-radius:50%;box-shadow:0 0 8px var(--eva-red);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.topbar .right{display:flex;gap:22px}
+
+/* ============================================================
+   通用 Section
+   ============================================================ */
+section{height:100vh;width:100%;scroll-snap-align:start;scroll-snap-stop:always;position:relative;overflow:hidden}
+.section-inner{height:100%;width:100%;display:flex;position:relative;padding:70px 48px 48px}
+
+/* 竖排日文 */
+.vt{writing-mode:vertical-rl;font-family:var(--jp);font-weight:900;letter-spacing:.08em}
+
+/* 滚动文字滑动效果基础类 —— 由JS控制 transform */
+.slide-x{will-change:transform;transition:transform .1s linear}
+.slide-y{will-change:transform;transition:transform .1s linear}
+
+/* 角标装饰 */
+.corner{position:absolute;font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--cream-dim);opacity:.6}
+.corner.tl{top:16px;left:20px}
+.corner.tr{top:16px;right:20px}
+.corner.bl{bottom:16px;left:20px}
+.corner.br{bottom:16px;right:20px}
+
+/* 大号英文标题 */
+.mega{font-family:var(--display);line-height:.85;letter-spacing:.02em}
+
+/* ============================================================
+   PAGE 1 — HERO / 封面
+   ============================================================ */
+#p1{background:var(--bg-black)}
+#p1 .grid-bg{position:absolute;inset:0;background-image:
+  linear-gradient(var(--line) 1px,transparent 1px),
+  linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:60px 60px;opacity:.5}
+#p1 .grid-bg::after{content:"";position:absolute;inset:0;background:
+  radial-gradient(circle at 50% 60%,rgba(61,31,92,.55),transparent 60%)}
+
+#p1 .hero-left{position:relative;z-index:3;display:flex;flex-direction:column;justify-content:center;padding-left:30px;flex:1}
+#p1 .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.35em;color:var(--eva-green);margin-bottom:18px}
+#p1 .kicker span{color:var(--eva-red)}
+#p1 .title-en{font-family:var(--display);font-size:clamp(70px,13vw,200px);line-height:.82;color:var(--cream);letter-spacing:0;pointer-events:none}
+#p1 .title-en .ev{color:var(--eva-purple-l)}
+#p1 .title-jp{font-family:var(--jp);font-weight:900;font-size:clamp(26px,3.4vw,52px);color:var(--eva-red);margin-top:10px;letter-spacing:.12em}
+#p1 .sub{font-family:var(--cond);font-weight:300;font-size:14px;letter-spacing:.3em;color:var(--cream-dim);margin-top:30px;max-width:440px;line-height:1.7}
+#p1 .spec-row{display:flex;gap:30px;margin-top:40px;font-family:var(--mono);font-size:11px;color:var(--cream-dim)}
+#p1 .spec-row b{color:var(--eva-green);display:block;font-weight:400;margin-bottom:4px}
+
+#p1 .hero-right{position:absolute;right:0;top:0;bottom:0;width:46%;z-index:2;display:flex;align-items:center;justify-content:center;perspective:1000px}
+#p1 .halo{position:absolute;width:78vh;height:78vh;border-radius:50%;border:2px solid var(--eva-red);
+  box-shadow:0 0 60px rgba(212,32,43,.4),inset 0 0 60px rgba(212,32,43,.25);pointer-events:none}
+#p1 .halo.h2{width:60vh;height:60vh;border-color:var(--eva-purple-l);box-shadow:0 0 40px rgba(107,63,160,.5)}
+#p1 .halo.h3{width:92vh;height:92vh;border-color:transparent;border-top:1px solid rgba(124,252,0,.4)}
+#p1 .hero-poster{position:relative;z-index:50;width:min(500px,calc((100vh - 120px)/2));max-width:100%;border:2px solid var(--eva-red);background:var(--bg-black);overflow:hidden;isolation:isolate;transform-style:preserve-3d;transition:transform .35s ease,box-shadow .35s ease;pointer-events:auto;cursor:grab;user-select:none;-webkit-user-drag:none}
+#p1 .hero-poster img{display:block;width:100%;height:auto;filter:grayscale(20%) contrast(120%);pointer-events:none}
+#p1 .hero-poster::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(to bottom,rgba(10,10,12,.3) 0,rgba(10,10,12,.3) 1px,transparent 1px,transparent 4px)}
+#p1 .poster-classified{position:absolute;top:14px;left:14px;z-index:2;padding:6px 9px;background:var(--eva-red);color:var(--bg-black);font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.12em;line-height:1;pointer-events:none}
+#p1 .poster-coords{position:absolute;top:14px;right:14px;z-index:2;color:var(--cream);font-family:var(--mono);font-size:8px;line-height:1.7;letter-spacing:.08em;text-align:right;text-shadow:0 1px 3px #000;pointer-events:none}
+#p1 .p1-poster:not(.is-dragging):hover{transform:scale(1.02);box-shadow:0 0 18px rgba(212,32,43,.65),0 0 42px rgba(212,32,43,.25)}
+#p1 .p1-poster.is-dragging{transition:none!important;user-select:none;cursor:grabbing}
+@media(prefers-reduced-motion:reduce){#p1 .hero-poster{transition:none}#p1 .p1-poster:not(.is-dragging):hover{transform:none}}
+#p1 .vt-r{position:absolute;right:26px;top:18%;font-size:clamp(28px,3vw,46px);color:var(--cream);opacity:.85;z-index:5}
+#p1 .quote{position:absolute;left:48px;bottom:60px;z-index:6;font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--eva-green);line-height:1.9}
+
+/* ============================================================
+   PAGE 2 — EVA-01 初号机
+   ============================================================ */
+#p2{background:var(--eva-purple-d)}
+#p2::before{content:"";position:absolute;inset:0;background:
+  linear-gradient(115deg,var(--eva-purple-d) 0%,#1e0f30 55%,#120920 100%)}
+#p2 .tech-grid{position:absolute;inset:0;background-image:
+  linear-gradient(rgba(124,252,0,.07) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(124,252,0,.07) 1px,transparent 1px);
+  background-size:40px 40px}
+#p2 .big-num{position:absolute;right:-30px;bottom:-60px;font-family:var(--display);font-size:clamp(300px,55vh,900px);
+  color:transparent;-webkit-text-stroke:1px rgba(124,252,0,.18);line-height:.8;z-index:1}
+#p2 .col-left{flex:1;display:flex;flex-direction:column;justify-content:center;padding-left:40px;position:relative;z-index:4}
+#p2 .unit-tag{font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--eva-green);margin-bottom:14px}
+#p2 .unit-name{font-family:var(--display);font-size:clamp(64px,11vw,180px);line-height:.8;color:var(--eva-green);letter-spacing:.01em}
+#p2 .unit-name .num{color:var(--cream)}
+#p2 .unit-jp{font-family:var(--jp);font-weight:900;font-size:clamp(22px,2.6vw,40px);color:var(--cream);margin-top:8px;letter-spacing:.15em}
+#p2 .pilot{font-family:var(--cond);font-weight:300;font-size:14px;letter-spacing:.25em;color:var(--cream-dim);margin-top:22px}
+#p2 .pilot b{color:var(--eva-red);font-weight:600}
+#p2 .motto{font-family:var(--display);font-size:clamp(20px,2.4vw,38px);color:var(--eva-red);margin-top:34px;letter-spacing:.08em;line-height:1}
+#p2 .motto .jp{font-family:var(--jp);font-weight:900;font-size:.7em;display:block;color:var(--cream);margin-top:8px;letter-spacing:.2em}
+#p2 .specs{margin-top:36px;display:grid;grid-template-columns:1fr 1fr;gap:10px 40px;max-width:420px;font-family:var(--mono);font-size:11px;color:var(--cream-dim)}
+#p2 .specs div{display:flex;justify-content:space-between;border-bottom:1px solid rgba(124,252,0,.15);padding:6px 0}
+#p2 .specs span:last-child{color:var(--eva-green)}
+
+#p2 .col-right{position:relative;flex:1;min-width:0;display:flex;align-items:center;justify-content:center;z-index:3}
+#p2 .blueprint-stage{position:relative;width:700px;height:692px;flex:0 0 700px;transform-origin:center center}
+#p2 .eva-body{display:block;width:700px;height:692px;object-fit:contain;filter:grayscale(10%) contrast(115%) drop-shadow(0 0 24px rgba(124,252,0,.16));user-select:none;-webkit-user-drag:none}
+#p2 .hotspot{position:absolute;z-index:5;background:transparent;border:0;outline:0;cursor:crosshair}
+#p2 .hotspot::before{content:"";position:absolute;inset:-6px;border:1px solid var(--eva-red);box-shadow:0 0 12px rgba(212,32,43,.35);opacity:0;pointer-events:none}
+#p2 .hotspot::after{content:"";position:absolute;inset:-12px;opacity:0;pointer-events:none;background:linear-gradient(var(--eva-red),var(--eva-red)) center/100% 1px no-repeat,linear-gradient(var(--eva-red),var(--eva-red)) center/1px 100% no-repeat}
+#p2 .hotspot:hover::before,#p2 .hotspot:hover::after,#p2 .hotspot:focus-visible::before,#p2 .hotspot:focus-visible::after,#p2 .hotspot.is-active::before,#p2 .hotspot.is-active::after{opacity:1}
+#p2 .hotspot-label{display:none;position:absolute;top:8px;left:calc(100% + 18px);padding:6px 9px;border-left:2px solid var(--eva-red);background:rgba(0,0,0,.88);color:var(--eva-red);font-family:var(--mono);font-size:11px;line-height:1;letter-spacing:.08em;white-space:nowrap;pointer-events:none}
+#p2 .hotspot:hover .hotspot-label,#p2 .hotspot:focus-visible .hotspot-label{display:block}
+#p2 .hotspot-back .hotspot-label{left:auto;right:calc(100% + 18px)}
+#p2 .vt-l{position:absolute;left:24px;top:16%;font-size:clamp(24px,2.6vw,40px);color:var(--eva-green);opacity:.7}
+
+/* 第二页底部：战术播放带 */
+#p2 .tactical-tape{position:absolute;left:0;right:0;bottom:0;z-index:12;height:78px;overflow:hidden;border-top:1px solid var(--eva-green);border-bottom:1px solid var(--eva-green);background:#000;user-select:none;touch-action:none;outline:0}
+#p2 .tactical-tape:focus-visible{outline:1px solid var(--eva-green);outline-offset:-4px}
+#p2 .speed-lines{position:absolute;inset:18px 0 0;pointer-events:none;background:repeating-linear-gradient(102deg,transparent 0,transparent 25px,rgba(124,252,0,.12) 26px,transparent 29px)}
+#p2 .tape-label,#p2 .tape-readout{position:absolute;top:4px;z-index:4;padding:0 8px;background:#000;color:var(--eva-green);font-family:var(--mono);font-size:8px;line-height:12px;letter-spacing:.12em;pointer-events:none}
+#p2 .tape-label{left:10px}
+#p2 .tape-readout{right:10px}
+#p2 .tactical-track{position:absolute;left:0;top:19px;height:56px;display:flex;align-items:flex-end;width:max-content;will-change:transform}
+#p2 .mascot-unit{flex:0 0 84px;width:84px;height:52px;display:flex;align-items:flex-end;justify-content:center;animation:tactical-step .34s steps(2,end) infinite alternate}
+#p2 .mascot-unit:nth-child(2n){animation-delay:-.17s}
+#p2 .mascot-unit img{display:block;width:64px;height:48px;object-fit:contain;transform:scaleX(-1);-webkit-user-drag:none;pointer-events:none}
+#p2 .tactical-tape.is-overdrive{border-color:#ff0000;box-shadow:inset 0 0 18px rgba(255,0,0,.28),0 0 12px rgba(255,0,0,.55)}
+#p2 .tactical-tape.is-overdrive .speed-lines{background:repeating-linear-gradient(102deg,transparent 0,transparent 19px,rgba(255,0,0,.22) 20px,transparent 23px)}
+#p2 .tactical-tape.is-overdrive .tape-readout,#p2 .tactical-tape.is-overdrive .tape-label{color:#ff0000}
+@keyframes tactical-step{from{transform:translateY(0)}to{transform:translateY(-4px)}}
+@media(prefers-reduced-motion:reduce){#p2 .mascot-unit{animation:none}}
+
+/* EVA 部位详情终端 */
+.eva-modal{position:fixed;inset:0;z-index:10000;font-family:var(--mono)}
+.eva-modal[hidden]{display:none}
+.eva-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.42)}
+.eva-detail-panel{position:absolute;right:32px;top:50%;width:min(480px,calc(100vw - 40px));max-height:calc(100vh - 100px);overflow:auto;transform:translateY(-50%);border:1px solid var(--eva-green);border-radius:0;background:rgba(2,6,5,.94);color:var(--eva-green);box-shadow:8px 0 0 rgba(212,32,43,.28)}
+.eva-modal.is-open .eva-detail-panel{animation:eva-panel-glitch .2s steps(2,end) both}
+.panel-interference{position:absolute;inset:0;z-index:0;pointer-events:none;background:repeating-linear-gradient(to bottom,transparent 0,transparent 3px,rgba(124,252,0,.06) 3px,rgba(124,252,0,.06) 4px)}
+.panel-interference::after{content:"";position:absolute;left:0;right:0;top:34%;height:3px;background:var(--eva-red);box-shadow:0 34px 0 rgba(124,252,0,.65),0 -76px 0 rgba(212,32,43,.4);animation:eva-interference .22s steps(1,end) both}
+.panel-header,.panel-body{position:relative;z-index:1}
+.panel-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 16px;border-bottom:1px solid rgba(124,252,0,.45);background:rgba(0,0,0,.55)}
+.panel-sys{display:block;color:var(--cream-dim);font-size:9px;letter-spacing:.13em;line-height:1.7}
+.panel-code{display:block;color:var(--eva-red);font-size:11px;letter-spacing:.1em}
+.panel-close{flex:none;padding:6px 8px;border:1px solid var(--eva-red);border-radius:0;background:transparent;color:var(--eva-red);font-family:var(--mono);font-size:10px;letter-spacing:.06em;cursor:pointer}
+.panel-close:hover,.panel-close:focus-visible{background:var(--eva-red);color:#000;outline:0}
+.panel-body{padding:20px 18px 16px}
+.panel-axis{display:flex;justify-content:space-between;gap:12px;margin-bottom:16px;color:rgba(124,252,0,.55);font-size:8px;line-height:1.7;letter-spacing:.08em}
+.panel-title{margin:0 0 14px;color:var(--eva-green);font-family:var(--mono);font-size:20px;font-weight:500;line-height:1.45;letter-spacing:.04em}
+.panel-title::before{content:"> ";color:var(--eva-red)}
+.panel-description{min-height:96px;margin:0;color:var(--cream);font-family:var(--mono);font-size:12px;line-height:2;letter-spacing:.03em}
+.panel-data-bars{display:flex;align-items:flex-end;gap:4px;height:32px;margin:20px 0 16px;padding-bottom:5px;border-bottom:1px solid rgba(124,252,0,.3)}
+.panel-data-bars i{display:block;width:5px;background:var(--eva-green)}
+.panel-data-bars i:nth-child(3n){background:var(--eva-red)}
+.panel-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin:0;font-size:10px}
+.panel-stats div{display:flex;justify-content:space-between;gap:12px;padding-bottom:5px;border-bottom:1px solid rgba(124,252,0,.15)}
+.panel-stats dt{color:var(--cream-dim)}
+.panel-stats dd{margin:0;color:var(--eva-red);text-align:right}
+.panel-footer{display:flex;justify-content:space-between;margin-top:20px;color:rgba(124,252,0,.55);font-size:8px;letter-spacing:.08em}
+@keyframes eva-panel-glitch{0%{transform:translate(24px,-50%);clip-path:inset(0 0 84% 0)}35%{transform:translate(-10px,-50%);clip-path:inset(42% 0 18% 0)}65%{transform:translate(6px,-50%);clip-path:inset(8% 0 5% 0)}100%{transform:translate(0,-50%);clip-path:inset(0)}}
+@keyframes eva-interference{0%{transform:translateX(-18px)}50%{transform:translateX(24px)}100%{transform:translateX(0);visibility:hidden}}
+@media(max-width:600px){.eva-detail-panel{right:20px;left:20px;width:auto}.panel-stats{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.eva-modal.is-open .eva-detail-panel,.panel-interference::after{animation:none}}
+
+/* ============================================================
+   PAGE 3 — NERV PILOT TERMINAL
+   ============================================================ */
+#p3{--p3-bg:#050505;--p3-red:#ff0000;--p3-green:#00ff41;--p3-orange:#ff7f00;--p3-white:#f2f2f2;--p3-gray:#8f9691;--p3-line-g:rgba(0,255,65,.34);--p3-line-r:rgba(255,0,0,.48);background:var(--p3-bg);color:var(--p3-white);font-family:"Courier New",Courier,monospace;overflow:hidden}
+#p3 button{font-family:"Courier New",Courier,monospace}
+#p3 .crt,#p3 .impact-flash,#p3 #pilot-particle-layer{position:fixed;inset:0;pointer-events:none}
+#p3 .crt{position:absolute;z-index:30;background:repeating-linear-gradient(to bottom,rgba(255,255,255,.025) 0,rgba(255,255,255,.025) 1px,transparent 1px,transparent 4px)}
+#p3 .impact-flash{position:absolute;z-index:40;display:none;border:7px solid var(--p3-red)}
+#p3 .impact-flash.active{display:block;animation:p3-edge-flash .15s steps(2,end)}
+#p3 #pilot-particle-layer{z-index:900;overflow:hidden}
+#p3 .terminal{position:relative;z-index:3;height:100%;min-height:0;padding:62px 5vw 24px;display:flex;flex-direction:column;background-color:transparent;background-image:linear-gradient(rgba(61,31,92,.15) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,65,.03) 1px,transparent 1px);background-size:28px 28px;background-clip:padding-box}
+#p3 .terminal.is-shaking{animation:p3-screen-shake .15s steps(2,end)}
+#p3 .status-bar{min-height:34px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:7px 10px;border:1px solid var(--p3-green);color:var(--p3-green);font-size:10px;letter-spacing:.08em}
+#p3 .status-bar span:nth-child(2){color:var(--p3-gray)}
+#p3 .status-online::before{content:"■";margin-right:8px;color:var(--p3-red);animation:p3-warning-blink .7s steps(1,end) infinite}
+#p3 .screen{flex:1;min-height:0;display:flex;flex-direction:column;border:1px solid var(--p3-green);border-top:0}
+#p3 .upper{flex:1;min-height:210px;display:grid;grid-template-columns:minmax(260px,1fr) minmax(380px,1.45fr) minmax(280px,1fr);border-bottom:1px solid var(--p3-red)}
+#p3 .intel,#p3 .radar-panel{padding:14px;overflow:hidden;background:rgba(5,5,5,.86)}
+#p3 .intel{border-right:1px solid var(--p3-line-g);color:var(--p3-green);font-size:10px;line-height:1.55}
+#p3 .section-code{margin:0 0 10px;color:var(--p3-white);font-size:12px;font-weight:700;letter-spacing:.06em}
+#p3 .log-list{margin:0;padding:0;list-style:none}
+#p3 .log-list li{display:grid;grid-template-columns:54px 1fr;gap:8px;border-bottom:1px solid rgba(0,255,65,.1)}
+#p3 .log-list time{color:var(--p3-gray)}
+#p3 .log-list .ok{color:var(--p3-green)}
+#p3 .log-list .denied{color:var(--p3-red)}
+#p3 .data-table{width:100%;margin-top:10px;border-collapse:collapse;color:var(--p3-gray);font-size:9px}
+#p3 .data-table td{padding:2px 0;border-bottom:1px solid rgba(0,255,65,.12)}
+#p3 .data-table td:last-child{color:var(--p3-green);text-align:right}
+#p3 .warning{margin-top:10px;padding:5px 7px;border:1px solid var(--p3-red);color:var(--p3-red);font-weight:700;letter-spacing:.08em;animation:p3-warning-blink .72s steps(1,end) infinite}
+#p3 .command{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;padding:26px 16px;text-align:center;background:rgba(5,5,5,.86);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);box-shadow:inset 0 0 20px rgba(255,0,0,.2);border:1px solid var(--p3-red);border-top:1px solid var(--p3-red)}
+#p3 .command::before,#p3 .command::after{content:"";position:absolute;left:14px;right:14px;height:1px;background:var(--p3-line-r)}
+#p3 .command::before{top:14px}
+#p3 .command::after{bottom:14px}
+#p3 .command-meta{margin-bottom:20px;color:var(--p3-green);font-size:9px;letter-spacing:.18em}
+#p3 .glitch-title{margin:0;color:var(--p3-red);font-size:clamp(54px,7.2vw,118px);font-weight:700;line-height:.78;letter-spacing:-.08em;pointer-events:none}
+#p3 .glitch{position:relative;display:block}
+#p3 .glitch::before,#p3 .glitch::after{content:attr(data-text);position:absolute;inset:0;pointer-events:none}
+#p3 .glitch::before{color:var(--p3-green);clip-path:inset(8% 0 62% 0);animation:p3-glitch-a 1.1s steps(1,end) infinite}
+#p3 .glitch::after{color:var(--p3-red);clip-path:inset(58% 0 12% 0);animation:p3-glitch-b .83s steps(1,end) infinite}
+#p3 .command-sub{margin:22px 0 0;color:var(--p3-gray);font-size:10px;line-height:1.8;letter-spacing:.08em}
+#p3 .command-sub strong{color:var(--p3-red);font-weight:400}
+#p3 .radar-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;border-left:1px solid var(--p3-line-g)}
+#p3 .radar-scope{position:relative;width:min(18vw,210px);min-width:150px;aspect-ratio:1;overflow:hidden;border:1px solid var(--p3-green);border-radius:50%}
+#p3 .radar-ring,#p3 .radar-cross,#p3 .radar-sweep{position:absolute;inset:0}
+#p3 .radar-ring{border:1px solid rgba(0,255,65,.35);border-radius:50%}
+#p3 .radar-ring.r1{inset:23%}
+#p3 .radar-ring.r2{inset:41%}
+#p3 .radar-cross::before,#p3 .radar-cross::after{content:"";position:absolute;background:rgba(0,255,65,.35)}
+#p3 .radar-cross::before{top:50%;left:0;width:100%;height:1px}
+#p3 .radar-cross::after{top:0;left:50%;width:1px;height:100%}
+#p3 .radar-sweep{animation:p3-radar-rotate 2.6s linear infinite}
+#p3 .radar-sweep::before{content:"";position:absolute;top:50%;left:50%;width:48%;height:1px;background:var(--p3-green);transform-origin:left center}
+#p3 .radar-sweep::after{content:"";position:absolute;top:calc(50% - 3px);left:calc(50% - 3px);width:6px;height:6px;background:var(--p3-green)}
+#p3 .blip{position:absolute;width:4px;height:4px;background:var(--p3-red);animation:p3-warning-blink 1s steps(1,end) infinite}
+#p3 .blip.b1{top:28%;left:63%}
+#p3 .blip.b2{top:66%;left:34%;animation-delay:.3s}
+#p3 .blip.b3{top:54%;left:74%;animation-delay:.6s}
+#p3 .radar-readout{width:min(18vw,210px);min-width:150px;display:flex;justify-content:space-between;margin-top:8px;color:var(--p3-green);font-size:9px}
+#p3 .archive{flex:none;border:1px solid var(--p3-red);border-top:0;background:rgba(5,5,5,.86)}
+#p3 .archive-header,#p3 .archive-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;color:var(--p3-red);font-size:10px;letter-spacing:.07em}
+#p3 .archive-header{border-bottom:1px solid var(--p3-red)}
+#p3 .archive-header span:last-child,#p3 .archive-footer{color:var(--p3-gray)}
+#p3 .archive-scroll{overflow-x:auto}
+#p3 .slots{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:rgba(0,0,0,.7);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+#p3 .pilot-slot{position:relative;min-width:0;height:clamp(220px,32vh,340px);margin:0;padding:0;overflow:hidden;border:1px solid var(--p3-line-g);border-radius:0;background:rgba(0,0,0,.2);color:var(--p3-white);cursor:crosshair}
+#p3 .pilot-slot+.pilot-slot{border-left:0}
+#p3 .pilot-slot:hover,#p3 .pilot-slot:focus-visible{z-index:2;border-color:var(--p3-red);outline:1px solid var(--p3-red);outline-offset:-4px}
+#p3 .pilot-slot:disabled{opacity:1;border-color:rgba(255,127,0,.35);cursor:not-allowed}
+#p3 .pilot-visual{position:absolute;inset:0 0 40px;display:flex;align-items:flex-end;justify-content:center}
+#p3 .pilot-visual img{display:block;width:100%;height:100%;object-fit:contain;object-position:center bottom;filter:contrast(1.12) saturate(.8);-webkit-user-drag:none;user-select:none}
+#p3 .pilot-slot:hover .pilot-visual img,#p3 .pilot-slot:focus-visible .pilot-visual img{animation:p3-pilot-glitch .13s steps(1,end) infinite}
+#p3 .pilot-slot::after{content:"";position:absolute;inset:0;display:none;pointer-events:none;background:repeating-linear-gradient(to bottom,transparent 0,transparent 9px,rgba(255,0,0,.17) 9px,rgba(0,255,65,.13) 11px,transparent 13px)}
+#p3 .pilot-slot:hover::after,#p3 .pilot-slot:focus-visible::after{display:block;animation:p3-slot-interference .12s steps(2,end) infinite}
+#p3 .pilot-meta{position:absolute;right:0;bottom:0;left:0;height:40px;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:0 8px;border-top:1px solid var(--p3-line-r);background:var(--p3-bg);color:var(--p3-white);font-size:10px;white-space:nowrap}
+#p3 .pilot-meta small{color:var(--p3-green);font-size:8px}
+#p3 .slot-index{position:absolute;top:7px;left:8px;z-index:2;color:var(--p3-green);font-size:9px}
+#p3 .pilot-slot.is-dissolved .pilot-visual,#p3 .pilot-slot.is-dissolved .pilot-meta,#p3 .pilot-slot.is-dissolved .slot-index,#p3 .pilot-slot.is-dissolved::after{display:none}
+#p3 .lcl-residue{position:absolute;left:50%;bottom:44px;width:62%;height:32px;border-radius:50%;background:var(--p3-orange);filter:blur(7px);opacity:.82;transform:translateX(-50%) scale(.15,.3);animation:p3-residue-hit .16s steps(3,end) forwards}
+#p3 .lcl-residue::after{content:"LCL // RESIDUE";position:absolute;top:34px;left:50%;color:var(--p3-orange);font-size:8px;white-space:nowrap;transform:translateX(-50%)}
+#p3 .lilith-bg-container{position:absolute;top:0;left:0;width:100vw;height:100vh;z-index:2;pointer-events:none;display:block;overflow:hidden}
+#p3 .lilith-bg-container img{width:100%;height:100%;object-fit:cover;object-position:center;opacity:.45;filter:brightness(.8) contrast(1.2) grayscale(40%);mix-blend-mode:screen;transition:filter .5s ease-out,opacity .5s ease-out}
+#p3 .lilith-bg-container::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 52%,transparent 0%,rgba(5,5,5,.15) 42%,rgba(5,5,5,.55) 88%)}
+#p3 .lilith-bg-container.awake img{opacity:.75;filter:brightness(1.2) sepia(1) hue-rotate(-50deg) contrast(1.5);transition:filter .1s ease-in,opacity .1s ease-in}
+/* command 面板的音频波形 + 乱码数据 */
+#p3 .command .audio-bars{display:flex;align-items:flex-end;justify-content:center;gap:3px;height:52px;margin:12px auto 4px}
+#p3 .command .audio-bars i{display:block;width:4px;height:100%;background:linear-gradient(180deg,var(--p3-green) 0%,var(--p3-red) 100%);animation:p3-audio 1s ease-in-out infinite;transform-origin:bottom}
+/* 30 根高频 A.T. 力场频谱 */
+#p3 .command .at-spectrum{
+  position:relative;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:2px;
+  height:clamp(40px,5vw,64px);
+  width:100%;
+  margin:10px 0 6px;
+  padding:0 6px;
+  /* 绿色精细网格背景 */
+  background-image:
+    linear-gradient(rgba(0,255,65,.12) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,255,65,.12) 1px,transparent 1px);
+  background-size:8px 8px;
+  border-top:1px solid rgba(0,255,65,.22);
+  border-bottom:1px solid rgba(0,255,65,.22);
+  overflow:hidden;
+}
+#p3 .command .at-spectrum::before{
+  content:"> AT FIELD ANALYSIS: ACTIVE";
+  position:absolute;
+  top:2px;left:8px;
+  color:var(--p3-green);
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:.12em;
+  z-index:2;
+  background:rgba(0,0,0,.55);
+  padding:1px 5px;
+}
+#p3 .command .at-spectrum i{
+  display:block;
+  flex:0 0 auto;
+  width:3px;
+  height:100%;
+  background:linear-gradient(180deg,#00ff41 0%,#ff2a2a 85%,#ff2a2a 100%);
+  transform-origin:bottom;
+  animation:p3-at-pulse .55s ease-in-out infinite;
+  border-radius:1px 1px 0 0;
+  box-shadow:0 0 3px rgba(0,255,65,.5);
+}
+@keyframes p3-at-pulse{
+  0%{   transform:scaleY(.15) }
+  25%{  transform:scaleY(.85) }
+  50%{  transform:scaleY(.35) }
+  75%{  transform:scaleY(.95) }
+  100%{ transform:scaleY(.15) }
+}
+
+/* 底部黑框：十六进制滚动流 + CENTRAL DOGMA + 实时 deadCount */
+#p3 .slots{position:relative;overflow:hidden}
+#p3 .slots::before{
+  content:"CENTRAL DOGMA";
+  position:absolute;
+  left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  font-family:"Bebas Neue","Oswald",sans-serif;
+  font-weight:700;
+  font-size:clamp(60px,8vw,120px);
+  color:#a01010;
+  letter-spacing:.18em;
+  opacity:.05;
+  pointer-events:none;
+  z-index:1;
+  white-space:nowrap;
+}
+#p3 .slots .hex-stream{
+  position:absolute;
+  top:0;left:0;right:0;bottom:0;
+  overflow:hidden;
+  pointer-events:none;
+  z-index:2;
+  opacity:.35;
+}
+#p3 .slots .hex-stream span{
+  position:absolute;
+  left:0;
+  right:0;
+  font-family:var(--mono);
+  font-size:9px;
+  color:#00ff41;
+  letter-spacing:.05em;
+  white-space:nowrap;
+  line-height:1.7;
+  transform:translateY(-100%);
+  animation:p3-hex-scroll linear infinite;
+}
+@keyframes p3-hex-scroll{
+  0%{   transform:translateY(-100%) }
+  100%{ transform:translateY(100%) }
+}
+/* 恭喜结局 overlay */
+.p3-omendaito{
+  position:fixed;inset:0;
+  z-index:9999;
+  background:#000;
+  pointer-events:auto;
+  overflow:hidden;
+  animation:p3-congrats-flash .1s steps(2,end) infinite;
+}
+.p3-omendaito span{
+  position:absolute;
+  color:#fff;
+  font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+  font-weight:900;
+  pointer-events:none;
+  white-space:nowrap;
+  text-shadow:0 0 12px rgba(255,255,255,.4);
+  animation:p3-congrats-pop 2s ease-out forwards;
+}
+@keyframes p3-congrats-flash{
+  0%,49%{background:#000}
+  50%,100%{background:#fff}
+}
+@keyframes p3-congrats-pop{
+  0%{   opacity:0;transform:scale(.5) rotate(var(--rot,0deg))}
+  15%{  opacity:1;transform:scale(1.05) rotate(var(--rot,0deg))}
+  100%{ opacity:1;transform:scale(1) rotate(var(--rot,0deg))}
+}
+@media(prefers-reduced-motion:reduce){
+  .p3-omendaito{animation:none;background:#000}
+  .p3-omendaito span{animation:none;opacity:1}
+}
+#p3 .slots .target-counter{
+  position:absolute;
+  left:10px;top:6px;
+  z-index:10;
+  font-family:var(--mono);
+  font-size:10px;
+  color:#00ff41;
+  letter-spacing:.1em;
+  background:rgba(0,0,0,.55);
+  padding:2px 8px;
+  border:1px solid rgba(0,255,65,.35);
+}
+#p3 .command .audio-bars i:nth-child(1){animation-delay:.0s}
+#p3 .command .audio-bars i:nth-child(2){animation-delay:.13s}
+#p3 .command .audio-bars i:nth-child(3){animation-delay:.26s}
+#p3 .command .audio-bars i:nth-child(4){animation-delay:.39s}
+#p3 .command .audio-bars i:nth-child(5){animation-delay:.52s}
+#p3 .command .audio-bars i:nth-child(6){animation-delay:.65s}
+#p3 .command .audio-bars i:nth-child(7){animation-delay:.78s}
+#p3 .command .audio-bars i:nth-child(8){animation-delay:.91s}
+#p3 .command .telemetry-lines{margin-top:10px;color:var(--p3-gray);font-size:8px;line-height:1.9;letter-spacing:.08em;text-align:left;max-width:260px}
+#p3 .command .telemetry-lines span.ok{color:var(--p3-green)}
+#p3 .command .telemetry-lines span.denied{color:var(--p3-red)}
+/* 底部巨大水印 */
+#p3 .abyss-watermark{position:absolute;left:0;right:0;bottom:0;z-index:4;color:var(--p3-white);font-family:"Oswald","Bebas Neue",sans-serif;font-size:clamp(120px,10vw,200px);font-weight:700;letter-spacing:.25em;line-height:1;text-align:center;opacity:.05;pointer-events:none;user-select:none;white-space:nowrap;transform:translateZ(0)}
+#p3 .lcl-particle{position:fixed;top:0;left:0;border-radius:50%;background:var(--p3-orange);will-change:transform}
+#p3 .archive-footer{border-top:1px solid var(--p3-red);font-size:8px}
+#p3 #pilot-last-event{color:var(--p3-orange)}
+@keyframes p3-radar-rotate{to{transform:rotate(360deg)}}
+@keyframes p3-warning-blink{0%,48%{visibility:visible}49%,100%{visibility:hidden}}
+@keyframes p3-glitch-a{0%,76%,100%{transform:translate(0)}77%{transform:translate(7px,-2px)}82%{transform:translate(-5px,1px)}87%{transform:translate(2px)}}
+@keyframes p3-glitch-b{0%,69%,100%{transform:translate(0)}70%{transform:translate(-8px,2px)}75%{transform:translate(5px,-1px)}81%{transform:translate(-2px)}}
+@keyframes p3-pilot-glitch{0%{transform:translate(0);filter:contrast(1.4) saturate(.5) drop-shadow(3px 0 0 var(--p3-red)) drop-shadow(-3px 0 0 var(--p3-green))}33%{transform:translate(3px,-1px);filter:contrast(1.8) saturate(0) drop-shadow(-4px 0 0 var(--p3-red)) drop-shadow(4px 0 0 var(--p3-green))}66%{transform:translate(-2px,1px);filter:contrast(1.2) saturate(1.4) drop-shadow(2px 0 0 var(--p3-green)) drop-shadow(-2px 0 0 var(--p3-red))}}
+@keyframes p3-slot-interference{0%{transform:translateY(-5px)}50%{transform:translateY(6px)}100%{transform:translateY(0)}}
+@keyframes p3-screen-shake{0%{transform:translate(0)}20%{transform:translate(-7px,3px)}40%{transform:translate(6px,-4px)}60%{transform:translate(-4px,-2px)}80%{transform:translate(5px,3px)}100%{transform:translate(0)}}
+@keyframes p3-edge-flash{0%,45%{border-color:var(--p3-red)}46%,100%{border-color:transparent}}
+@keyframes p3-residue-hit{0%{transform:translateX(-50%) scale(.15,.3)}55%{transform:translateX(-50%) scale(1.2,.75)}100%{transform:translateX(-50%) scale(1,.65)}}
+@keyframes p3-audio{0%,100%{transform:scaleY(.15)}50%{transform:scaleY(1)}}
+@media(max-width:1050px){#p3 .upper{grid-template-columns:minmax(240px,.9fr) minmax(360px,1.4fr)}#p3 .radar-panel{display:none}#p3 .slots{min-width:800px}}
+@media(max-width:700px){#p3 .terminal{padding:58px 10px 14px}#p3 .upper{grid-template-columns:1fr}#p3 .intel{display:none}#p3 .status-bar span:nth-child(2),#p3 .archive-header span:last-child{display:none}}
+@media(prefers-reduced-motion:reduce){#p3 .radar-sweep,#p3 .glitch::before,#p3 .glitch::after,#p3 .warning,#p3 .status-online::before,#p3 .pilot-slot:hover .pilot-visual img,#p3 .pilot-slot:hover::after,#p3 .command .audio-bars i{animation:none}}
+
+/* ============================================================
+   PAGE 4 — 人類補完計画（心理恐怖版）
+   所有类名/变量带 p4- 前缀；滤镜只作用于 #p4-container
+   ============================================================ */
+#p4{background:#0a0a0c;overflow:hidden}
+#p4-container{position:relative;width:100%;height:100%;font-family:"Courier New",Courier,monospace;color:#e8e8e8;overflow:hidden}
+#p4-container::before{content:"";position:absolute;inset:0;background:
+  linear-gradient(180deg,#0a0a0c 0%,#120a0a 40%,#1a0505 100%);z-index:0}
+
+/* 顶部状态栏三栏 */
+.p4-topbar{position:relative;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:18px 32px;border-bottom:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.5)}
+.p4-topbar .p4-sys-tag{color:#ff2a2a;font-size:13px;letter-spacing:.2em}
+.p4-topbar .p4-sys-tag::before{content:"■";margin-right:10px;animation:p4-blink .5s steps(1,end) infinite}
+.p4-topbar .p4-countdown{color:#ff1e1e;font-size:clamp(36px,5.4vw,72px);font-weight:700;letter-spacing:.08em;text-align:center;text-shadow:0 0 18px rgba(255,30,30,.7)}
+.p4-topbar .p4-countdown .p4-t-label{font-size:clamp(11px,1.4vw,16px);color:#ff5555;margin-right:10px;letter-spacing:.25em}
+.p4-topbar .p4-countdown .p4-t-num{font-variant-numeric:tabular-nums}
+.p4-topbar .p4-garble{text-align:right;font-size:11px;line-height:1.7;letter-spacing:.05em;color:#7a7a7a;min-width:220px}
+.p4-topbar .p4-garble span{display:block}
+
+/* 中心靶心 */
+.p4-core{position:relative;z-index:3;flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.p4-core-stage{position:relative;width:clamp(260px,42vw,520px);aspect-ratio:1;cursor:grab;user-select:none}
+.p4-core-stage:active{cursor:grabbing}
+.p4-ring{position:absolute;border:1px solid rgba(255,30,30,.5);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}
+.p4-ring.r1{inset:0;border-width:1px;border-color:rgba(255,255,255,.12)}
+.p4-ring.r2{inset:14%;border-color:rgba(255,30,30,.35);animation:p4-ring-pulse 2.2s ease-in-out infinite}
+.p4-ring.r3{inset:28%;border-color:rgba(255,30,30,.55);animation:p4-ring-pulse 2.2s ease-in-out infinite .4s}
+.p4-ring.r4{inset:44%;border-color:rgba(255,30,30,.7);animation:p4-ring-pulse 2.2s ease-in-out infinite .8s}
+.p4-ring.r5{inset:60%;border-color:rgba(255,255,255,.2);animation:p4-ring-pulse 2.2s ease-in-out infinite 1.2s}
+.p4-ring.r6{inset:76%;background:radial-gradient(circle,rgba(255,30,30,.55) 0%,rgba(255,30,30,.1) 40%,transparent 70%)}
+.p4-crosshair{position:absolute;inset:0}
+.p4-crosshair::before,.p4-crosshair::after{content:"";position:absolute;background:rgba(255,30,30,.4)}
+.p4-crosshair::before{top:50%;left:0;right:0;height:1px;transform:translateY(-50%)}
+.p4-crosshair::after{left:50%;top:0;bottom:0;width:1px;transform:translateX(-50%)}
+.p4-sync-label{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#ff3b3b;font-size:clamp(10px,1.3vw,14px);letter-spacing:.3em;text-align:center;text-shadow:0 0 10px rgba(255,30,30,.7);animation:p4-label-breath 1.4s ease-in-out infinite}
+.p4-sync-label small{display:block;color:#8a1a1a;font-size:9px;letter-spacing:.5em;margin-top:6px}
+
+/* 底部日志终端 */
+.p4-log{position:relative;z-index:4;height:clamp(130px,20vh,200px);border-top:1px solid rgba(255,30,30,.3);background:rgba(0,0,0,.75);overflow:hidden}
+.p4-log-head{padding:6px 20px;border-bottom:1px solid rgba(255,30,30,.4);color:#ff3b3b;font-size:10px;letter-spacing:.2em;display:flex;justify-content:space-between}
+.p4-log-body{padding:10px 20px;font-size:10px;line-height:1.8;color:#8f8f8f;overflow:hidden}
+.p4-log-body .p4-log-line{display:grid;grid-template-columns:70px 1fr 90px;gap:10px}
+.p4-log-body .p4-log-line .p4-time{color:#555}
+.p4-log-body .p4-log-line .p4-msg{color:#9a9a9a}
+.p4-log-body .p4-log-line .p4-lev{text-align:right}
+.p4-log-body .p4-log-line .p4-lev.ok{color:#00ff41}
+.p4-log-body .p4-log-line .p4-lev.warn{color:#ffb020}
+.p4-log-body .p4-log-line .p4-lev.err{color:#ff2a2a}
+.p4-log-scroll{position:absolute;bottom:0;left:0;right:0;transform:translateY(var(--p4-log-scroll));transition:transform .3s steps(4,end)}
+
+/* CRT 扫描线（只 p4 内部） */
+.p4-crt-scan{position:absolute;inset:0;pointer-events:none;z-index:50;background:
+  repeating-linear-gradient(to bottom,rgba(255,255,255,.035) 0,rgba(255,255,255,.035) 1px,transparent 1px,transparent 3px),
+  linear-gradient(180deg,transparent 0%,rgba(0,0,0,.15) 50%,transparent 100%);animation:p4-scan-drift 8s linear infinite}
+.p4-noise{position:absolute;inset:0;pointer-events:none;z-index:49;opacity:.06;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* 崩坏类 p4-glitch-broken */
+#p4-container.p4-glitch-broken{animation:p4-shake .1s steps(2,end) infinite;filter:invert(1) hue-rotate(90deg)}
+#p4-container.p4-glitch-broken .p4-ring{border-color:#ff3b3b!important;animation-duration:.35s}
+#p4-container.p4-glitch-broken .p4-sync-label{color:#ff3b3b;animation:p4-label-breath .3s infinite}
+
+/* 恐怖凝视图片层（JS 动态生成） */
+.p4-scare{position:absolute;pointer-events:none;z-index:999;animation:p4-scare-pop .8s linear forwards;image-rendering:high-quality}
+.p4-scare img{display:block;width:100%;height:100%;object-fit:contain;filter:contrast(200%) grayscale(50%) sepia(50%) hue-rotate(-50deg)}
+
+/* 黑屏过渡 */
+.p4-blackout{position:absolute;inset:0;background:#000;z-index:800;pointer-events:none;animation:p4-blackout .5s steps(1,end) forwards}
+
+/* 抉择面板 */
+.p4-choice{position:absolute;inset:0;z-index:802;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;background:rgba(0,0,0,.92);animation:p4-fadein .4s steps(2,end)}
+.p4-choice-title{color:#ff1e1e;font-size:clamp(22px,3.2vw,42px);letter-spacing:.25em;text-shadow:0 0 20px rgba(255,30,30,.7)}
+.p4-choice-btns{display:flex;gap:40px}
+.p4-choice-btns button{font-family:"Courier New",Courier,monospace;min-width:200px;padding:22px 40px;border:1px solid #ff1e1e;background:transparent;color:#ff1e1e;font-size:clamp(14px,1.8vw,20px);letter-spacing:.22em;cursor:pointer;transition:all .12s;pointer-events:auto}
+.p4-choice-btns button:hover{background:#ff1e1e;color:#000;box-shadow:0 0 28px rgba(255,30,30,.6)}
+.p4-choice-btns .p4-accept{border-color:#ff1e1e;color:#ff1e1e}
+.p4-choice-btns .p4-reject{border-color:#ff5a5a;color:#ff5a5a}
+.p4-choice-btns .p4-reject:hover{background:#ff5a5a;color:#000}
+
+/* ACCEPT：橙色淹没 + 哲学独白打字机 + 虚无 */
+.p4-accept-overlay{position:absolute;inset:0;z-index:850;background:#ff7f00;display:flex;align-items:center;justify-content:flex-start;flex-direction:column;padding:8vh 12vw;animation:p4-overlay-slam .3s steps(2,end)}
+.p4-accept-overlay .p4-accept-text{color:#fff;font-family:"Courier New","JetBrains Mono",monospace;font-size:clamp(13px,1.3vw,18px);letter-spacing:.03em;line-height:2;text-align:center;width:100%;margin-top:10vh}
+.p4-accept-overlay .p4-accept-text .p4-line{opacity:0;margin-bottom:14px;white-space:pre-wrap;min-height:1.6em}
+.p4-accept-overlay .p4-accept-text .p4-line.visible{opacity:1;transition:opacity .01s}   /* 瞬间出现，靠 JS 控制 */
+.p4-accept-overlay.is-void{background:#fff;transition:background 2.2s ease-out}
+.p4-accept-overlay.is-void .p4-accept-text{opacity:0;transition:opacity 1.8s ease-out}
+
+/* REJECT：I NEED YOU + 震动 + 终端打字机 + 重启提示符 */
+.p4-reject-overlay{position:absolute;inset:0;z-index:850;background:#000;display:flex;align-items:center;justify-content:center}
+.p4-reject-overlay .p4-reject-text{color:#fff;font-family:"Bebas Neue","Oswald",sans-serif;font-size:clamp(60px,11vw,220px);line-height:.9;letter-spacing:.04em;text-shadow:0 0 60px rgba(255,255,255,.3);animation:p4-needyou-flash 1.2s steps(3,end) forwards}
+.p4-reject-overlay.is-terminal{background:#020203;animation:none}
+.p4-reject-overlay.is-terminal .p4-reject-text{display:none}
+.p4-reject-overlay .p4-terminal-text{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;padding:0 12vw;color:#ff3b3b;font-family:"Courier New","JetBrains Mono",monospace;font-size:clamp(13px,1.4vw,19px);letter-spacing:.02em;line-height:2.2;text-align:center}
+.p4-reject-overlay .p4-terminal-text .p4-line{opacity:0;margin-bottom:12px;white-space:pre-wrap;min-height:1.6em}
+.p4-reject-overlay .p4-terminal-text .p4-line.visible{opacity:1}
+.p4-reject-overlay .p4-reboot{position:absolute;bottom:8vh;left:0;right:0;text-align:center;color:#00ff41;font-family:"Courier New",monospace;font-size:clamp(11px,1vw,14px);letter-spacing:.15em;opacity:0;animation:p4-reboot-blink 1.1s steps(2,end) infinite}
+.p4-reject-overlay .p4-reboot.visible{opacity:1}
+@keyframes p4-needyou-flash{0%,50%{opacity:1}51%,100%{opacity:0}}
+@keyframes p4-reboot-blink{0%,49%{opacity:0}50%,100%{opacity:1}}
+
+/* keyframes */
+@keyframes p4-blink{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes p4-ring-pulse{0%,100%{opacity:.6;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.05)}}
+@keyframes p4-label-breath{0%,100%{opacity:.7;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}}
+@keyframes p4-scan-drift{0%{background-position:0 0,0 0}100%{background-position:0 400px,0 0}}
+@keyframes p4-shake{0%{transform:translate(0,0)}20%{transform:translate(-6px,3px)}40%{transform:translate(5px,-4px)}60%{transform:translate(-4px,-2px)}80%{transform:translate(4px,3px)}100%{transform:translate(0,0)}}
+@keyframes p4-scare-pop{0%{opacity:0;transform:scale(.8)}12%{opacity:.95;transform:scale(1.04)}75%{opacity:.6}100%{opacity:0;transform:scale(1.15)}}
+@keyframes p4-blackout{0%{opacity:0}100%{opacity:1}}
+@keyframes p4-fadein{0%{opacity:0}100%{opacity:1}}
+@keyframes p4-overlay-slam{0%{opacity:0;background:#000}40%{opacity:1;background:#ff8c00}100%{opacity:1;background:#ff8c00}}
+@keyframes p4-glitch-flicker{0%,95%,100%{opacity:1}96%{opacity:.4}97%{opacity:1}98%{opacity:.3}99%{opacity:1}}
+
+/* 响应式 */
+@media(max-width:900px){
+  #p4-container .p4-topbar{padding:14px 16px;flex-wrap:wrap;gap:10px}
+  #p4-container .p4-topbar .p4-garble{display:none}
+}
+
+/* 响应式简化 */
+@media(max-width:900px){
+  .section-inner{padding:60px 22px 30px}
+  #p1 .hero-right{width:60%;opacity:.5}
+  #p1 .hero-left{padding-left:10px}
+  .nav{right:12px}
+  .topbar{padding:10px 14px;font-size:9px}
+  #p3 .info-left,#p3 .info-right{position:static;transform:none;max-width:100%;text-align:left}
+  #p3 .nerv-wrap{flex-direction:column;gap:20px}
+}
+
+/* ====== 浮动剧集标题背景 ====== */
+.ft-layer{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.ft-title{
+  position:absolute;
+  pointer-events:auto;
+  user-select:none;
+  font-family:"SimSun","Songti SC","STSong",serif;
+  font-weight:700;
+  font-style:italic;
+  color:rgba(255,255,255,.15);
+  letter-spacing:.08em;
+  transform:translate(var(--ft-x),var(--ft-y));
+  transition:color .15s ease,text-shadow .15s ease,font-weight .15s ease;
+  will-change:transform;
+  white-space:nowrap;
+  cursor:grab;
+}
+.ft-title:hover{color:rgba(255,255,255,.3)}
+.ft-title.is-glowing{
+  color:#fff;
+  text-shadow:0 0 10px #fff,0 0 20px #fff,0 0 40px rgba(255,255,255,.5);
+  font-weight:900;
+}
+.ft-title.is-dragging{cursor:grabbing;transition:none}
+@media(prefers-reduced-motion:reduce){.ft-title{transition:none}}
+
+/* ====== 全局液态凹陷鼠标特效 ====== */
+#liquid-cursor-layer{
+  position:fixed;
+  top:0;left:0;
+  width:100vw;height:100vh;
+  z-index:9998;                  /* 严格锁 9998，在自定义光标 9999 之下 */
+  pointer-events:none;           /* 绝不禁拦点击 */
+  overflow:hidden;
+}
+body.stop-liquid #liquid-cursor-layer{display:none}
+
+#liquid-cursor-layer .dimple-node{
+  position:absolute;
+  width:90px;height:90px;
+  margin:-45px 0 0 -45px;
+  left:var(--dpx,0);
+  top:var(--dpy,0);
+  border-radius:50%;
+  pointer-events:none;
+  /* 核心液态效果：凹陷感 + 色差 */
+  backdrop-filter:blur(2px) contrast(150%) hue-rotate(10deg);
+  -webkit-backdrop-filter:blur(2px) contrast(150%) hue-rotate(10deg);
+  box-shadow:
+    inset 0 0 14px rgba(255,0,0,.35),
+    inset 0 0 7px rgba(0,255,65,.35),
+    0 0 18px rgba(0,0,0,.25);
+  border:1px solid rgba(255,255,255,.05);
+  will-change:transform,opacity;   /* 强制 GPU 层 */
+  transform:scale(.4);
+  opacity:.65;
+  animation:dimple-breathe .85s ease-out forwards;
+}
+
+@keyframes dimple-breathe{
+  0%{  transform:scale(.4);  opacity:.7 }
+  50%{ transform:scale(.9);  opacity:.45 }
+  100%{transform:scale(1.6); opacity:0 }
+}
+
+@media(prefers-reduced-motion:reduce){
+  #liquid-cursor-layer{display:none}
+}
+</style>
+</head>
+<body class="page-1 ft-page-1">
+<div id="custom-cursor" aria-hidden="true"><div class="cursor-visual"></div></div>
+
+<!-- 全局液态凹陷鼠标特效层（z-index:9998，严格在自定义光标之下） -->
+<div id="liquid-cursor-layer" aria-hidden="true"></div>
+
+<!-- 全屏浮动剧集标题背景（底层，pointer-events:none，文字节点单独开事件） -->
+<div class="ft-layer" id="ft-layer"></div>
+
+<div class="grain"></div>
+<div class="scanlines"></div>
+
+<!-- 顶部状态栏 -->
+<div class="topbar">
+  <div class="left">
+    <span class="dot"></span>
+    <span>NERV // GEO FRONT TERMINAL</span>
+    <span style="color:var(--eva-green)">SYS_ONLINE</span>
+  </div>
+  <div class="right">
+    <span>2015</span>
+    <span>3rd IMPACT</span>
+    <span style="color:var(--eva-red)">CODE:RED</span>
+  </div>
+</div>
+
+<!-- 侧边导航 -->
+<nav class="nav">
+  <a href="#p1" class="active" data-idx="0"></a>
+  <a href="#p2" data-idx="1"></a>
+  <a href="#p3" data-idx="2"></a>
+  <a href="#p4" data-idx="3"></a>
+</nav>
+
+<!-- ============================================================
+     PAGE 1 — HERO
+     ============================================================ -->
+<section id="p1">
+  <div class="grid-bg"></div>
+
+  <div class="hero-left">
+    <div class="kicker">FILE <span>01</span> // PROTOCOL <span>EVANGELION</span></div>
+    <h1 class="title-en">NEON<br>GENE<span class="ev">SIS</span><br>EVANGELION</h1>
+    <div class="title-jp">新 世 紀 エ ヴ ァ ン ゲ リ オ ン</div>
+    <p class="sub">汎用ヒト型決戦兵器　人造人間エヴァンゲリオン。<br>西暦2015年、人類は再び〈使徒〉と向き合う。</p>
+    <div class="spec-row">
+      <div><b>UNIT-01</b>TEST TYPE</div>
+      <div><b>PILOT</b>IKARI SHINJI</div>
+      <div><b>SYNC</b>400% / ∞</div>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="halo h3"></div>
+    <div class="halo"></div>
+    <div class="halo h2"></div>
+    <!-- 首页机密海报 -->
+    <figure class="hero-poster p1-poster" id="p1-poster">
+      <img src="eva-bg.jpg" alt="EVA初号机与碇真嗣的机密档案海报">
+      <span class="poster-classified">[ TOP SECRET ]</span>
+      <span class="poster-coords">35.6762° N / 139.6503° E<br>GEO-FRONT // 2015</span>
+    </figure>
+  </div>
+
+  <div class="vt vt-r">新世紀エヴァンゲリオン</div>
+
+  <div class="quote">
+    GOD'S IN HIS HEAVEN.<br>
+    ALL'S RIGHT WITH THE WORLD.
+  </div>
+
+  <span class="corner tl">01 / 04 — OPENING</span>
+  <span class="corner br">NERV // GEHIRN ARCHIVE</span>
+</section>
+
+<!-- ============================================================
+     PAGE 2 — EVA-01
+     ============================================================ -->
+<section id="p2">
+  <div class="tech-grid"></div>
+  <div class="big-num">01</div>
+
+  <div class="vt vt-l">初号機</div>
+
+  <div class="section-inner">
+    <div class="col-left">
+      <div class="unit-tag">EVANGELION UNIT // TEST TYPE-01</div>
+      <h2 class="unit-name">EVA<span class="num">-01</span></h2>
+      <div class="unit-jp">初 号 機　テストタイプ</div>
+      <div class="pilot">PILOT: <b>IKARI SHINJI</b> / 碇 シンジ</div>
+      <div class="motto">
+        I MUSTN'T RUN AWAY.
+        <span class="jp">逃げちゃダメだ</span>
+      </div>
+      <div class="specs">
+        <div><span>CLASSIFICATION</span><span>HUMAN</span></div>
+        <div><span>ORIGIN</span><span>ADAM</span></div>
+        <div><span>CORE</span><span>LILITH</span></div>
+        <div><span>ENTRY PLUG</span><span>Φ180</span></div>
+        <div><span>HEIGHT</span><span>40.0m</span></div>
+        <div><span>WEIGHT</span><span>700t</span></div>
+        <div><span>ARMAMENT</span><span>PROG-KNIFE</span></div>
+        <div><span>POWER</span><span>UMBILICAL</span></div>
+      </div>
+    </div>
+
+    <div class="col-right">
+      <!-- 三视图热区：直接微调 top / left / width / height 像素值 -->
+      <div class="blueprint-stage">
+        <img src="eva-blueprint.png" class="eva-body" alt="EVA初号机正面、侧面与背面三视图">
+
+        <div class="hotspot hotspot-head" role="button" tabindex="0" data-part="head"
+             aria-label="查看头部装甲与暴走机制" style="top:45px;left:35px;width:190px;height:140px">
+          <span class="hotspot-label">[ DATA: HEAD ]</span>
+        </div>
+
+        <div class="hotspot hotspot-chest" role="button" tabindex="0" data-part="chest"
+             aria-label="查看插入栓与LCL液体" style="top:185px;left:40px;width:195px;height:165px">
+          <span class="hotspot-label">[ DATA: CORE ]</span>
+        </div>
+
+        <div class="hotspot hotspot-back" role="button" tabindex="0" data-part="back"
+             aria-label="查看动力与脐带电缆" style="top:120px;left:455px;width:185px;height:230px">
+          <span class="hotspot-label">[ DATA: POWER ]</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 战术播放带：按住鼠标或触屏加速 -->
+  <div class="tactical-tape" id="tactical-tape" role="button" tabindex="0" aria-label="按住加速战术播放带">
+    <div class="speed-lines" aria-hidden="true"></div>
+    <span class="tape-label">TACTICAL PLAYBACK // HOLD TO ACCELERATE</span>
+    <span class="tape-readout"><span id="tape-state">BASE CRUISE</span> // SPD <span id="tape-speed">01.0</span></span>
+    <div class="tactical-track" id="tactical-track" aria-hidden="true">
+      <div class="mascot-unit"><img src="mascot.png" alt="" draggable="false"></div>
+      <div class="mascot-unit"><img src="mascot.png" alt="" draggable="false"></div>
+      <div class="mascot-unit"><img src="mascot.png" alt="" draggable="false"></div>
+      <div class="mascot-unit"><img src="mascot.png" alt="" draggable="false"></div>
+      <div class="mascot-unit"><img src="mascot.png" alt="" draggable="false"></div>
+      <div class="mascot-unit"><img src="mascot.png" alt="" draggable="false"></div>
+      <div class="mascot-unit"><img src="mascot.png" alt="" draggable="false"></div>
+      <div class="mascot-unit"><img src="mascot.png" alt="" draggable="false"></div>
+      <div class="mascot-unit"><img src="mascot.png" alt="" draggable="false"></div>
+      <div class="mascot-unit"><img src="mascot.png" alt="" draggable="false"></div>
+    </div>
+  </div>
+
+  <span class="corner tl">02 / 04 — UNIT-01</span>
+  <span class="corner br">PROJECT E // HAKONE</span>
+</section>
+
+<!-- ============================================================
+     PAGE 3 — NERV
+     ============================================================ -->
+<section id="p3">
+  <div class="lilith-bg-container" id="lilith-bg" aria-hidden="true">
+    <img src="lilith.png" alt="Lilith">
+  </div>
+  <div class="crt" aria-hidden="true"></div>
+  <div class="impact-flash" id="pilot-impact-flash" aria-hidden="true"></div>
+  <div id="pilot-particle-layer" aria-hidden="true"></div>
+
+  <div class="terminal" id="pilot-terminal">
+    <header class="status-bar">
+      <span class="status-online">NERV OS 6.1.2 // ONLINE</span>
+      <span>GEO-FRONT / TERMINAL 03 / CLEARANCE: A</span>
+      <span id="pilot-clock">2015.07.11 // 00:00:00</span>
+    </header>
+
+    <section class="screen" aria-label="NERV 驾驶员选择战术终端">
+      <div class="upper">
+        <aside class="intel">
+          <h2 class="section-code">[ NERV // CENTRAL DOGMA ]</h2>
+          <ul class="log-list">
+            <li><time>00:13:07</time><span class="ok">MAGI CONNECTION ...... OK</span></li>
+            <li><time>00:13:08</time><span>MELCHIOR-1 .......... LOAD</span></li>
+            <li><time>00:13:09</time><span>BALTHASAR-2 ......... LOAD</span></li>
+            <li><time>00:13:10</time><span>CASPER-3 ............ LOAD</span></li>
+            <li><time>00:13:11</time><span class="denied">SEELE PROTOCOL ...... LOCK</span></li>
+            <li><time>00:13:12</time><span>A.T. FIELD .......... STANDBY</span></li>
+            <li><time>00:13:13</time><span>LCL PRESSURE ........ 0.84</span></li>
+            <li><time>00:13:14</time><span class="ok">PILOT DATABASE ...... OPEN</span></li>
+          </ul>
+          <table class="data-table" aria-label="终端状态数据">
+            <tr><td>GEOFRONT_DEPTH</td><td>-890.04 M</td></tr>
+            <tr><td>DOGMA_TEMP</td><td>36.02 C</td></tr>
+            <tr><td>SYNC_FREQUENCY</td><td>12.440 HZ</td></tr>
+            <tr><td>DEFENSE_GRID</td><td>22 / 22</td></tr>
+            <tr><td>ERROR_RATE</td><td>0.00013%</td></tr>
+          </table>
+          <div class="warning">WARNING // UNAUTHORIZED LCL EVENT</div>
+        </aside>
+
+        <section class="command">
+          <div class="command-meta">EVANGELION // ACTIVE PERSONNEL DATABASE</div>
+          <h1 class="glitch-title" aria-label="PILOT SELECT">
+            <span class="glitch" data-text="PILOT">PILOT</span>
+            <span class="glitch" data-text="SELECT">SELECT</span>
+          </h1>
+          <p class="command-sub">
+            SELECT TARGET FOR NEURAL LINK<br>
+            <strong>CAUTION: DIRECT INPUT CANNOT BE UNDONE</strong>
+          </p>
+          <div class="audio-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <!-- A.T. 力场高频频谱（JS 生成 30 根 bar） -->
+          <div class="at-spectrum" id="p3-at-spectrum" aria-hidden="true"></div>
+          <div class="telemetry-lines" aria-label="实时同步遥测">
+            <div>&gt; SYNC RATIO ....... <span class="ok">+89.2%</span></div>
+            <div>&gt; LCL DENSITY ...... <span>1.027 g/cm³</span></div>
+            <div>&gt; A.T. FIELD ....... <span class="ok">ACTIVE</span></div>
+            <div>&gt; SEELE SIGNAL ..... <span class="denied">JAMMED</span></div>
+            <div>&gt; DOGMA DEPTH ...... -890.04 M</div>
+          </div>
+        </section>
+
+        <aside class="radar-panel">
+          <div class="radar-scope" aria-label="雷达扫描中">
+            <div class="radar-ring"></div>
+            <div class="radar-ring r1"></div>
+            <div class="radar-ring r2"></div>
+            <div class="radar-cross"></div>
+            <div class="radar-sweep"></div>
+            <i class="blip b1"></i><i class="blip b2"></i><i class="blip b3"></i>
+          </div>
+          <div class="radar-readout"><span>SCAN: 036.4</span><span>RNG: 40.0M</span></div>
+        </aside>
+      </div>
+
+      <section class="archive" aria-label="驾驶员数据读取槽">
+        <header class="archive-header">
+          <span>[ DATA ARCHIVE // SELECT TARGET ]</span>
+          <span>05 RECORDS FOUND // INPUT: CLICK</span>
+        </header>
+        <div class="archive-scroll">
+          <div class="slots" id="p3-slots">
+            <!-- 底部黑框重度填充 -->
+            <div class="target-counter" id="p3-target-counter">> TARGETS DESTROYED: 0/5</div>
+            <div class="hex-stream" id="p3-hex-stream" aria-hidden="true"></div>
+            <button class="pilot-slot" type="button" data-pilot="01" aria-label="PILOT 01，点击触发 LCL 化">
+              <span class="slot-index">REC_001 // A-02</span>
+              <span class="pilot-visual"><img src="1.png" alt="PILOT 01" draggable="false"></span>
+              <span class="pilot-meta"><span>[ PILOT 01 ]</span><small>SYNC: 87.4%</small></span>
+            </button>
+            <button class="pilot-slot" type="button" data-pilot="02" aria-label="PILOT 02，点击触发 LCL 化">
+              <span class="slot-index">REC_002 // F-05</span>
+              <span class="pilot-visual"><img src="2.png" alt="PILOT 02" draggable="false"></span>
+              <span class="pilot-meta"><span>[ PILOT 02 ]</span><small>SYNC: 99.9%</small></span>
+            </button>
+            <button class="pilot-slot" type="button" data-pilot="03" aria-label="PILOT 03，点击触发 LCL 化">
+              <span class="slot-index">REC_003 // I-03</span>
+              <span class="pilot-visual"><img src="3.png" alt="PILOT 03" draggable="false"></span>
+              <span class="pilot-meta"><span>[ PILOT 03 ]</span><small>SYNC: 41.3%</small></span>
+            </button>
+            <button class="pilot-slot" type="button" data-pilot="04" aria-label="PILOT 04，点击触发 LCL 化">
+              <span class="slot-index">REC_004 // M-08</span>
+              <span class="pilot-visual"><img src="4.png" alt="PILOT 04" draggable="false"></span>
+              <span class="pilot-meta"><span>[ PILOT 04 ]</span><small>SYNC: 72.8%</small></span>
+            </button>
+            <button class="pilot-slot" type="button" data-pilot="05" aria-label="PILOT 05，点击触发 LCL 化">
+              <span class="slot-index">REC_005 // A-01</span>
+              <span class="pilot-visual"><img src="5.png" alt="PILOT 05" draggable="false"></span>
+              <span class="pilot-meta"><span>[ PILOT 05 ]</span><small>SYNC: 96.1%</small></span>
+            </button>
+          </div>
+        </div>
+        <footer class="archive-footer">
+          <span id="pilot-last-event">WAITING FOR TARGET INPUT...</span>
+          <span>LCL.EXE // ARMED</span>
+        </footer>
+      </section>
+    </section>
+  </div>
+  <div class="abyss-watermark" aria-hidden="true">EVANGELION TEST TYPE-01　//　CENTRAL DOGMA</div>
+</section>
+
+<!-- ============================================================
+     PAGE 4 — 人類補完計画（心理恐怖版）
+     ============================================================ -->
+<section id="p4">
+  <div id="p4-container">
+    <div class="p4-topbar">
+      <div class="p4-sys-tag">SYSTEM CRITICAL // COMPLEMENT_PROTOCOL</div>
+      <div class="p4-countdown"><span class="p4-t-label">T-MINUS</span><span class="p4-t-num" id="p4-count">00:15</span></div>
+      <div class="p4-garble" id="p4-garble">
+        <span>%_jZ∑‡∞</span><span>┌── ── ─── ──</span><span>ERR_0x4141</span><span>SIG - - - -</span>
+      </div>
+    </div>
+
+    <div class="p4-core">
+      <div class="p4-core-stage" id="p4-core-stage" role="button" tabindex="0" aria-label="按住凝视触发同步">
+        <div class="p4-ring r1"></div>
+        <div class="p4-ring r2"></div>
+        <div class="p4-ring r3"></div>
+        <div class="p4-ring r4"></div>
+        <div class="p4-ring r5"></div>
+        <div class="p4-ring r6"></div>
+        <div class="p4-crosshair"></div>
+        <div class="p4-sync-label">HOLD TO SYNC<small>NEURAL LINK</small></div>
+      </div>
+    </div>
+
+    <div class="p4-log" id="p4-log">
+      <div class="p4-log-head"><span>TERMINAL 04 / LOG_STREAM</span><span>LEVEL_5 // CRITICAL</span></div>
+      <div class="p4-log-body">
+        <div class="p4-log-scroll" id="p4-log-scroll"></div>
+      </div>
+    </div>
+
+    <div class="p4-crt-scan" aria-hidden="true"></div>
+    <div class="p4-noise" aria-hidden="true"></div>
+  </div>
+</section>
+
+<!-- EVA 部位详情 Modal：内容由 JS 的 EVA_PART_DATA 填充 -->
+<div class="eva-modal" id="eva-detail-modal" hidden>
+  <div class="eva-modal-backdrop" data-close-modal></div>
+  <article class="eva-detail-panel" role="dialog" aria-modal="true" aria-labelledby="panel-title">
+    <div class="panel-interference" aria-hidden="true"></div>
+    <header class="panel-header">
+      <div>
+        <span class="panel-sys">NERV // RESTRICTED ARCHIVE // TERMINAL 03</span>
+        <span class="panel-code" id="panel-code">WAITING FOR INPUT...</span>
+      </div>
+      <button class="panel-close" id="panel-close" type="button">[ X ] CLOSE</button>
+    </header>
+    <div class="panel-body">
+      <div class="panel-axis" aria-hidden="true">
+        <span>X:35.6762 / Y:139.6503<br>AXIS:Z-040.00</span>
+        <span>CH:0x01<br>SEQ:0091-AF</span>
+      </div>
+      <h3 class="panel-title" id="panel-title"></h3>
+      <p class="panel-description" id="panel-description"></p>
+      <div class="panel-data-bars" aria-hidden="true">
+        <i style="height:8px"></i><i style="height:19px"></i><i style="height:12px"></i>
+        <i style="height:25px"></i><i style="height:16px"></i><i style="height:29px"></i>
+        <i style="height:10px"></i><i style="height:22px"></i><i style="height:14px"></i>
+        <i style="height:27px"></i><i style="height:18px"></i><i style="height:7px"></i>
+      </div>
+      <dl class="panel-stats" id="panel-stats"></dl>
+      <div class="panel-footer" aria-hidden="true">
+        <span>MAGI: MELCHIOR-1</span><span>DATA integrity: 98.7%</span>
+      </div>
+    </div>
+  </article>
+</div>
+
+<script>
+/* ============================================================
+   滚动转场 + 文字滑动响应
+   ============================================================ */
+(function(){
+  const sections = document.querySelectorAll('section');
+  const navLinks = document.querySelectorAll('.nav a');
+
+  // 每个 section 内需要随滚动滑动的文字元素
+  const slideEls = document.querySelectorAll('.title-en, .title-jp, .unit-name, .unit-jp, .motto, .slogan, .proj-title, .proj-jp, .komm, .vt');
+
+  // 给元素加 slide-x / slide-y 类
+  slideEls.forEach((el, i) => {
+    el.classList.add(i % 2 === 0 ? 'slide-x' : 'slide-y');
+  });
+
+  // 导航高亮
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const idx = [...sections].indexOf(e.target);
+        navLinks.forEach((a, i) => a.classList.toggle('active', i === idx));
+      }
+    });
+  }, { threshold: 0.5 });
+  sections.forEach(s => observer.observe(s));
+
+  // 滚动文字滑动响应
+  function onScroll() {
+    const st = window.scrollY;
+    const vh = window.innerHeight;
+
+    sections.forEach((sec, i) => {
+      const top = sec.offsetTop;
+      const local = st - top;             // 本section内的滚动量
+      const progress = Math.max(-1, Math.min(1, local / vh)); // -1~1
+
+      // 本section内的slide元素
+      const xs = sec.querySelectorAll('.slide-x');
+      const ys = sec.querySelectorAll('.slide-y');
+
+      // 文字横向滑动：进入/离开时左右滑动
+      xs.forEach((el, k) => {
+        const factor = (k % 2 === 0 ? 1 : -1) * 60;
+        el.style.transform = `translateX(${progress * factor}px)`;
+      });
+      // 文字纵向滑动
+      ys.forEach((el, k) => {
+        const factor = (k % 2 === 0 ? 1 : -1) * 40;
+        el.style.transform = `translateY(${progress * factor}px)`;
+      });
+
+      // 大数字 / 光晕的视差
+      const bigNum = sec.querySelector('.big-num');
+      if (bigNum) bigNum.style.transform = `translateY(${progress * -80}px)`;
+      const halos = sec.querySelectorAll('.halo');
+      halos.forEach((h, k) => {
+        h.style.transform = `rotate(${progress * (10 + k * 6)}deg) scale(${1 + Math.abs(progress) * 0.05})`;
+      });
+    });
+
+    // 顶部进度指示（topbar右）
+    const total = document.body.scrollHeight - vh;
+    const pct = Math.round((st / total) * 100);
+    const code = document.querySelector('.topbar .right span:last-child');
+    if (code) code.textContent = 'CODE:' + (pct > 66 ? 'RED' : pct > 33 ? 'AMB' : 'GRN');
+  }
+
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => { onScroll(); ticking = false; });
+      ticking = true;
+    }
+  }, { passive: true });
+
+  onScroll();
+
+  // 键盘上下翻页
+  document.addEventListener('keydown', (e) => {
+    const cur = [...sections].findIndex(s => s.getBoundingClientRect().top >= -10);
+    if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+      e.preventDefault();
+      const next = Math.min(sections.length - 1, cur + 1);
+      sections[next].scrollIntoView({ behavior: 'smooth' });
+    } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+      e.preventDefault();
+      const prev = Math.max(0, cur - 1);
+      sections[prev].scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+})();
+</script>
+
+<script>
+/* ============================================================
+   EVA 部位设定数据接口：后续只需修改此对象
+   ============================================================ */
+window.EVA_PART_DATA = {
+  head: {
+    code: 'UNIT-01 / HEAD / FILE A-01',
+    title: '头部装甲与暴走机制',
+    content: '初号机拥有贴近人类形态的双眼结构。当驾驶员陷入生死危机时，初号机会觉醒超出规格的力量进入暴走状态，此时拘束器装甲会被撑碎。',
+    stats: [
+      ['OPTIC', 'DUAL EYE'],
+      ['ARMOR', 'RESTRICTOR'],
+      ['MODE', 'BERSERK'],
+      ['LIMIT', 'RELEASED']
+    ]
+  },
+  chest: {
+    code: 'UNIT-01 / CORE / FILE C-04',
+    title: '插入栓与 LCL 液体',
+    content: '驾驶舱（插入栓）位于相当于人类脊髓的位置。注入 LCL 液体后可完成呼吸，神经直连会使机体受到的损伤反馈给驾驶员（幻痛）。',
+    stats: [
+      ['PLUG', 'ENTRY'],
+      ['FLUID', 'L.C.L'],
+      ['LINK', 'NEURAL'],
+      ['FEEDBACK', 'PHANTOM']
+    ]
+  },
+  back: {
+    code: 'UNIT-01 / POWER / FILE P-05',
+    title: '动力与脐带电缆',
+    content: '依靠外部有线电力驱动。紧急状态下强制脱出电缆，切换内置电力后仅能活动 5 分钟，全功率运转仅 1 分钟。',
+    stats: [
+      ['SUPPLY', 'UMBILICAL'],
+      ['RESERVE', '05:00'],
+      ['FULL PWR', '01:00'],
+      ['EJECT', 'EMERGENCY']
+    ]
+  }
+};
+
+(function(){
+  const modal = document.getElementById('eva-detail-modal');
+  const panel = modal.querySelector('.eva-detail-panel');
+  const closeButton = document.getElementById('panel-close');
+  const codeEl = document.getElementById('panel-code');
+  const titleEl = document.getElementById('panel-title');
+  const descriptionEl = document.getElementById('panel-description');
+  const statsEl = document.getElementById('panel-stats');
+  const hotspots = [...document.querySelectorAll('#p2 .hotspot')];
+  const stage = document.querySelector('.blueprint-stage');
+  let activeHotspot = null;
+
+  function renderStats(stats){
+    statsEl.replaceChildren();
+    stats.forEach(([label, value]) => {
+      const row = document.createElement('div');
+      const dt = document.createElement('dt');
+      const dd = document.createElement('dd');
+      dt.textContent = label;
+      dd.textContent = value;
+      row.append(dt, dd);
+      statsEl.appendChild(row);
+    });
+  }
+
+  function openPart(part, trigger){
+    const data = window.EVA_PART_DATA[part];
+    if(!data){
+      console.warn(`未找到部位数据：${part}`);
+      return;
+    }
+
+    activeHotspot = trigger;
+    codeEl.textContent = data.code;
+    titleEl.textContent = data.title;
+    descriptionEl.textContent = data.content;
+    renderStats(data.stats);
+
+    hotspots.forEach(h => h.classList.toggle('is-active', h === trigger));
+    modal.hidden = false;
+    modal.classList.remove('is-open');
+    void panel.offsetWidth; // 重新触发硬切故障动画
+    modal.classList.add('is-open');
+    closeButton.focus({preventScroll:true});
+  }
+
+  function closeModal(){
+    if(modal.hidden) return;
+    modal.classList.remove('is-open');
+    modal.hidden = true;
+    hotspots.forEach(h => h.classList.remove('is-active'));
+    if(activeHotspot) activeHotspot.focus({preventScroll:true});
+    activeHotspot = null;
+  }
+
+  hotspots.forEach(hotspot => {
+    hotspot.addEventListener('click', () => openPart(hotspot.dataset.part, hotspot));
+    hotspot.addEventListener('keydown', event => {
+      if(event.key === 'Enter' || event.key === ' '){
+        event.preventDefault();
+        openPart(hotspot.dataset.part, hotspot);
+      }
+    });
+  });
+
+  closeButton.addEventListener('click', closeModal);
+  modal.querySelector('[data-close-modal]').addEventListener('click', closeModal);
+  document.addEventListener('keydown', event => {
+    if(event.key === 'Escape') closeModal();
+    if(event.key === 'Tab' && !modal.hidden){
+      event.preventDefault();
+      closeButton.focus();
+    }
+  });
+
+  // 保持 700px 热区坐标系，仅整体缩放，避免响应式后热区错位
+  function fitBlueprint(){
+    const holder = stage.parentElement;
+    const scale = Math.min(1, holder.clientWidth / 700, holder.clientHeight / 692);
+    stage.style.transform = `scale(${Math.max(0.2, scale)})`;
+  }
+  window.addEventListener('resize', fitBlueprint);
+  fitBlueprint();
+})();
+</script>
+
+<script>
+/* 第三页：角色 LCL 化与翻页重置 */
+(function(){
+  const page = document.getElementById('p3');
+  const terminal = document.getElementById('pilot-terminal');
+  const flash = document.getElementById('pilot-impact-flash');
+  const particleLayer = document.getElementById('pilot-particle-layer');
+  const lastEvent = document.getElementById('pilot-last-event');
+  const slots = [...page.querySelectorAll('.pilot-slot')];
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const PARTICLE_COUNT = 40;
+  const GRAVITY = .38;
+  let generation = 0;
+  let pageActive = false;
+  let impactTimer = null;
+  let deadCount = 0;
+  let isPlayingEnding = false;
+
+  // ====== 初始化：A.T. 频谱 30 根 + 十六进制滚动流 + counter ======
+  function initP3Fill(){
+    // 30 根 A.T. 力场频谱 bar
+    const spec = document.getElementById('p3-at-spectrum');
+    if(spec && spec.children.length === 0){
+      for(let i = 0; i < 30; i++){
+        const bar = document.createElement('i');
+        // 每根 bar 随机延迟（错开跳动）
+        bar.style.animationDelay = (-Math.random() * .55).toFixed(2) + 's';
+        // 随机 scaleY 幅度
+        bar.style.setProperty('--bar-scale', (0.2 + Math.random() * 0.75).toFixed(2));
+        spec.appendChild(bar);
+      }
+    }
+
+    // 十六进制滚动流（5 行随机生成，不同速度）
+    const hexStream = document.getElementById('p3-hex-stream');
+    if(hexStream && hexStream.children.length === 0){
+      const CODES = ['0x00A1','0xFF3B','0x7C00','0x12E0','0xA84F','0x0D91','0x55CD','0xB100','0x4E2A','0xFFFF','0x0000','0xDEAD','0xBEEF','0xCAFE','0x1337','0x4040','0xFADE','0x5311','0x0F0F','0xAA55','0x5A5A','0xC0DE','0x7A11','0x1ACE','0x900D','0xFEED','0xDEAF','0xABBA','0x0B0B','0x1F2E','0x3D4C','0x5B6A','0x7988','0x97A6','0xB5C4','0xD3E2','0xF1F0'];
+      for(let row = 0; row < 8; row++){
+        const line = document.createElement('span');
+        // 生成一行 30 个 hex code
+        const arr = [];
+        for(let k = 0; k < 30; k++){
+          arr.push(CODES[Math.floor(Math.random() * CODES.length)]);
+        }
+        line.textContent = arr.join('   ') + '   ' + arr.join('   ');   // 复制一次保证足够长
+        line.style.left = (-20 + Math.random() * 20) + '%';
+        line.style.right = (-20 + Math.random() * 20) + '%';
+        line.style.top = (row * 12.5) + '%';
+        line.style.animationDuration = (6 + Math.random() * 5).toFixed(1) + 's';
+        line.style.animationDelay = (-Math.random() * 6).toFixed(1) + 's';
+        line.style.opacity = (0.25 + Math.random() * 0.35).toFixed(2);
+        hexStream.appendChild(line);
+      }
+    }
+
+    // 初始 counter
+    updateCounter();
+  }
+
+  function updateCounter(){
+    const el = document.getElementById('p3-target-counter');
+    if(el) el.textContent = `> TARGETS DESTROYED: ${deadCount}/5`;
+  }
+
+  // ====== 恭喜结局：全屏疯狂日文 ======
+  function playOmedaito(){
+    if(isPlayingEnding) return;
+    isPlayingEnding = true;
+    deadCount = 0;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'p3-omendaito';
+    overlay.setAttribute('aria-label','恭喜');
+    document.body.appendChild(overlay);
+
+    // 疯狂生成 ~150 个日文 span
+    const PHRASES = ['おめでとう','ありがとう','おめでとう','おめでとう','ありがとう','おめでとう','おめでとう','おめでとう','ありがとう','おめでとう'];
+    for(let k = 0; k < 150; k++){
+      const span = document.createElement('span');
+      const text = PHRASES[Math.floor(Math.random() * PHRASES.length)];
+      span.textContent = text;
+      span.style.left = Math.random() * 100 + '%';
+      span.style.top  = Math.random() * 100 + '%';
+      span.style.fontSize = (15 + Math.random() * 85).toFixed(0) + 'px';
+      span.style.setProperty('--rot', (Math.random() * 30 - 15).toFixed(1) + 'deg');
+      span.style.animationDelay = (Math.random() * 1.2).toFixed(2) + 's';
+      span.style.animationDuration = (1.8 + Math.random() * 1.5).toFixed(2) + 's';
+      span.style.opacity = (0.55 + Math.random() * 0.45).toFixed(2);
+      overlay.appendChild(span);
+    }
+
+    // 4s 后结束
+    setTimeout(() => {
+      overlay.remove();
+      isPlayingEnding = false;
+      // 重置所有角色
+      generation++;
+      particleLayer.replaceChildren();
+      clearTimeout(impactTimer);
+      terminal.classList.remove('is-shaking');
+      flash.classList.remove('active');
+      lastEvent.textContent = 'WAITING FOR TARGET INPUT...';
+      slots.forEach(slot => {
+        slot.classList.remove('is-dissolved');
+        slot.disabled = false;
+        slot.querySelectorAll('.lcl-residue').forEach(residue => residue.remove());
+        slot.setAttribute('aria-label', `PILOT ${slot.dataset.pilot}，点击触发 LCL 化`);
+      });
+      updateCounter();
+    }, 4000);
+  }
+
+  function triggerImpact(){
+    if(reducedMotion.matches) return;
+    terminal.classList.remove('is-shaking');
+    flash.classList.remove('active');
+    void terminal.offsetWidth;
+    terminal.classList.add('is-shaking');
+    flash.classList.add('active');
+    clearTimeout(impactTimer);
+    impactTimer = setTimeout(() => {
+      terminal.classList.remove('is-shaking');
+      flash.classList.remove('active');
+    }, 160);
+  }
+
+  function createResidue(slot){
+    const residue = document.createElement('span');
+    residue.className = 'lcl-residue';
+    residue.setAttribute('aria-hidden', 'true');
+    slot.appendChild(residue);
+  }
+
+  function spawnParticles(image){
+    const currentGeneration = generation;
+    const rect = image.getBoundingClientRect();
+    const originX = rect.left + rect.width * .5;
+    const originY = rect.top + rect.height * .56;
+    const particles = [];
+
+    for(let i = 0; i < PARTICLE_COUNT; i++){
+      const node = document.createElement('i');
+      const size = 3 + Math.random() * 6;
+      node.className = 'lcl-particle';
+      node.style.width = `${size}px`;
+      node.style.height = `${size}px`;
+      particleLayer.appendChild(node);
+      particles.push({
+        node,
+        x: originX + (Math.random() - .5) * 30,
+        y: originY + (Math.random() - .5) * 24,
+        vx: (Math.random() - .5) * 16,
+        vy: -(4 + Math.random() * 10),
+        life: 0,
+        maxLife: 65 + Math.random() * 55
+      });
+    }
+
+    let previousTime = performance.now();
+    function animate(now){
+      if(currentGeneration !== generation){
+        particles.forEach(particle => particle.node.remove());
+        return;
+      }
+      const delta = Math.min(2, (now - previousTime) / 16.667);
+      previousTime = now;
+
+      for(let i = particles.length - 1; i >= 0; i--){
+        const particle = particles[i];
+        particle.vy += GRAVITY * delta;
+        particle.vx *= Math.pow(.992, delta);
+        particle.x += particle.vx * delta;
+        particle.y += particle.vy * delta;
+        particle.life += delta;
+
+        if(particle.life >= particle.maxLife || particle.y > window.innerHeight + 40){
+          particle.node.remove();
+          particles.splice(i, 1);
+          continue;
+        }
+        const scale = Math.max(.2, 1 - particle.life / particle.maxLife);
+        particle.node.style.transform = `translate3d(${particle.x}px,${particle.y}px,0) scale(${scale})`;
+      }
+      if(particles.length) requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+  }
+
+  function detonate(slot){
+    if(isPlayingEnding) return;                    // 结局锁定时忽略点击
+    if(slot.classList.contains('is-dissolved')) return;
+    const image = slot.querySelector('img');
+    const pilotId = slot.dataset.pilot;
+    spawnParticles(image);
+    slot.classList.add('is-dissolved');
+    slot.disabled = true;
+    slot.setAttribute('aria-label', `PILOT ${pilotId} 已 LCL 化，无法再次选择`);
+    createResidue(slot);
+    triggerImpact();
+    const lilithBg = document.getElementById('lilith-bg');
+    if(lilithBg){
+      lilithBg.classList.add('awake');
+      setTimeout(() => { lilithBg.classList.remove('awake'); }, 300);
+    }
+    lastEvent.textContent = `PILOT ${pilotId} // LCL CONVERSION DETECTED // SIGNAL LOST`;
+    deadCount++;
+    updateCounter();
+    // 全员击杀 → 触发彩蛋
+    if(deadCount === 5){
+      lastEvent.textContent = 'ALL TARGETS ELIMINATED... INITIATING OMEGA PROTOCOL';
+      setTimeout(playOmedaito, 400);
+    }
+  }
+
+  slots.forEach(slot => {
+    slot.addEventListener('click', () => detonate(slot));
+  });
+
+  function resetPilots(){
+    generation++;
+    particleLayer.replaceChildren();
+    clearTimeout(impactTimer);
+    terminal.classList.remove('is-shaking');
+    flash.classList.remove('active');
+    lastEvent.textContent = 'WAITING FOR TARGET INPUT...';
+    deadCount = 0;
+    updateCounter();
+
+    slots.forEach(slot => {
+      slot.classList.remove('is-dissolved');
+      slot.disabled = false;
+      slot.querySelectorAll('.lcl-residue').forEach(residue => residue.remove());
+      slot.setAttribute('aria-label', `PILOT ${slot.dataset.pilot}，点击触发 LCL 化`);
+    });
+  }
+
+  // 离开第三页后再次进入，无论之前状态如何都恢复五名角色
+  const observer = new IntersectionObserver(entries => {
+    const visible = entries[0].isIntersecting;
+    if(visible && !pageActive){
+      initP3Fill();      // 首次进页填充频谱 / hex-stream / counter
+      resetPilots();
+    }
+    pageActive = visible;
+  }, {threshold:.55});
+  observer.observe(page);
+
+  // 页面加载后立即 init（如果已经在 #p3）
+  initP3Fill();
+
+  function updateClock(){
+    const now = new Date();
+    const time = [now.getHours(), now.getMinutes(), now.getSeconds()]
+      .map(value => String(value).padStart(2, '0')).join(':');
+    document.getElementById('pilot-clock').textContent = `2015.07.11 // ${time}`;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+})();
+</script>
+
+<script>
+/* 全局自定义光标：页面切换、跟随、按压与长枪刺杀 */
+(function(){
+  const body = document.body;
+  const cursor = document.getElementById('custom-cursor');
+  const pageClasses = ['page-1', 'page-2', 'page-3', 'page-4'];
+  const pilotSlots = [...document.querySelectorAll('#p3 .pilot-slot')];
+  let currentPage = 1;
+  let mouseX = 0;
+  let mouseY = 0;
+  let framePending = false;
+  let animationTimer = null;
+
+  function renderCursor(){
+    cursor.style.transform = `translate3d(${mouseX}px,${mouseY}px,0)`;
+    framePending = false;
+  }
+
+  document.addEventListener('mousemove', event => {
+    mouseX = event.clientX;
+    mouseY = event.clientY;
+    cursor.classList.add('is-visible');
+    if(!framePending){
+      framePending = true;
+      requestAnimationFrame(renderCursor);
+    }
+  }, {passive:true});
+
+  document.documentElement.addEventListener('mouseleave', () => {
+    cursor.classList.remove('is-visible');
+  });
+
+  function setPage(pageNumber){
+    currentPage = pageNumber;
+    body.classList.remove(...pageClasses);
+    body.classList.add(`page-${pageNumber}`);
+    cursor.classList.remove('is-targeting', 'is-pressing', 'is-stabbing');
+    // 同步刷新浮动标题（不同页显示不同剧集）
+    if(typeof window.initFloatingTitles === 'function'){
+      window.initFloatingTitles(pageNumber - 1);
+    }
+  }
+
+  const pageObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting) setPage(Number(entry.target.id.slice(1)));
+    });
+  }, {threshold:.55});
+  document.querySelectorAll('#p1,#p2,#p3,#p4').forEach(page => pageObserver.observe(page));
+
+  function replayCursorAnimation(className){
+    clearTimeout(animationTimer);
+    cursor.classList.remove('is-pressing', 'is-stabbing');
+    void cursor.offsetWidth;
+    cursor.classList.add(className);
+    animationTimer = setTimeout(() => {
+      cursor.classList.remove(className);
+    }, 190);
+  }
+
+  // 第 1、2、4 页：按下时 Q 版角色缩小并回弹
+  document.addEventListener('mousedown', event => {
+    if(event.button === 0 && currentPage !== 3) replayCursorAnimation('is-pressing');
+  });
+
+  // 第 3 页：角色原有 click 爆碎逻辑与长枪刺杀在同一帧触发
+  document.addEventListener('click', event => {
+    if(currentPage !== 3) return;
+    const slot = event.target.closest('#p3 .pilot-slot');
+    if(!slot) return;
+    cursor.classList.remove('is-targeting');
+    replayCursorAnimation('is-stabbing');
+  });
+
+  pilotSlots.forEach(slot => {
+    slot.addEventListener('mouseenter', () => {
+      if(currentPage === 3 && !slot.disabled) cursor.classList.add('is-targeting');
+    });
+    slot.addEventListener('mouseleave', () => {
+      cursor.classList.remove('is-targeting');
+    });
+  });
+})();
+</script>
+
+<script>
+/* 第二页战术播放带：rAF 无缝滚动与按压加速引擎 */
+(function(){
+  const tape = document.getElementById('tactical-tape');
+  const track = document.getElementById('tactical-track');
+  const speedReadout = document.getElementById('tape-speed');
+  const stateReadout = document.getElementById('tape-state');
+  const UNIT_WIDTH = 84;
+  const BASE_SPEED = 1;
+  const MAX_SPEED = 30;
+  let currentSpeed = BASE_SPEED;
+  let isPressing = false;
+  let trackX = -UNIT_WIDTH;
+  let previousTime = performance.now();
+
+  // 根据视口宽度补足重复小人，保证高速移动时也不会出现空白
+  function fillTrack(){
+    const template = track.querySelector('.mascot-unit');
+    const requiredWidth = tape.clientWidth + UNIT_WIDTH * 4;
+    while(track.scrollWidth < requiredWidth){
+      track.appendChild(template.cloneNode(true));
+    }
+  }
+
+  function press(event){
+    if(event.type === 'mousedown' && event.button !== 0) return;
+    if(event.cancelable) event.preventDefault();
+    isPressing = true;
+    tape.classList.add('is-pressed');
+  }
+
+  function release(){
+    isPressing = false;
+    tape.classList.remove('is-pressed');
+  }
+
+  tape.addEventListener('mousedown', press);
+  window.addEventListener('mouseup', release);
+  tape.addEventListener('touchstart', press, {passive:false});
+  tape.addEventListener('touchend', release);
+  tape.addEventListener('touchcancel', release);
+  window.addEventListener('blur', release);
+
+  tape.addEventListener('keydown', event => {
+    if((event.key === ' ' || event.key === 'Enter') && !event.repeat) press(event);
+  });
+  tape.addEventListener('keyup', event => {
+    if(event.key === ' ' || event.key === 'Enter'){
+      event.preventDefault();
+      release();
+    }
+  });
+
+  function render(now){
+    const delta = Math.min(2, (now - previousTime) / 16.667);
+    previousTime = now;
+
+    if(isPressing){
+      currentSpeed = Math.min(MAX_SPEED, currentSpeed + .5 * delta);
+    }else{
+      currentSpeed = Math.max(BASE_SPEED, currentSpeed * Math.pow(.95, delta));
+      if(currentSpeed < 1.05) currentSpeed = BASE_SPEED;
+    }
+
+    trackX += currentSpeed * delta;
+    while(trackX >= 0) trackX -= UNIT_WIDTH;
+    track.style.transform = `translate3d(${trackX}px,0,0)`;
+
+    const overdrive = currentSpeed > 10;
+    tape.classList.toggle('is-overdrive', overdrive);
+    stateReadout.textContent = overdrive ? 'BERSERK OVERDRIVE' : (isPressing ? 'ACCELERATING' : 'BASE CRUISE');
+    speedReadout.textContent = currentSpeed.toFixed(1).padStart(4, '0');
+
+    requestAnimationFrame(render);
+  }
+
+  window.addEventListener('resize', fillTrack);
+  fillTrack();
+  requestAnimationFrame(render);
+})();
+</script>
+
+<script>
+/* ============================================================
+   PAGE 4 — 心理恐怖交互（长按凝视 + 终末抉择）
+   类名/变量统一 p4- 前缀，滤镜只作用于 #p4-container
+   ============================================================ */
+(function(){
+  const container  = document.getElementById('p4-container');
+  const stage      = document.getElementById('p4-core-stage');
+  const countEl    = document.getElementById('p4-count');
+  const garbleEl   = document.getElementById('p4-garble');
+  const scrollBox  = document.getElementById('p4-log-scroll');
+  const page       = document.getElementById('p4');
+
+  const SCARE_IMGS = ['scare1.jpg','scare2.jpg','scare3.jpg','scare4.jpg'];
+  const LOG_POOL = [
+    ['MAGI CONNECTION',        'LOADED',   'ok'],
+    ['SEELE PROTOCOL',         'LOCKED',   'err'],
+    ['A.T. FIELD STATUS',      'ACTIVE',   'ok'],
+    ['LCL RESERVOIR',          '87.4%',    'ok'],
+    ['SYNC RATIO',             '+99.9%',   'ok'],
+    ['DOGMA TEMP',             '36.02 C',  'warn'],
+    ['CORE IMPACT COUNT',      '0',        'ok'],
+    ['PILOT VITALS',           'STABLE',   'ok'],
+    ['WARNING // WALL 8 THREAT','DETECTED','err'],
+    ['WARNING // THIRD IMPACT', 'IMMINENT', 'err'],
+    ['UNRESTRICTED GATE',      'OPEN',     'warn'],
+    ['SEELE CHILDREN',         '1 / 07',   'warn'],
+    ['FINAL PROTOCOL',         'ARMED',    'err'],
+    ['COMPLEMENT TRIGGER',     'READY',    'err'],
+    ['HUMAN INDIVIDUATION',    '∞',        'warn'],
+    ['— I NEED YOU —',         '...',      'err']
+  ];
+
+  const GARBLE_CHARS = '%_jZ∑‡∞╬┌─┘▓█░0x4141ERR_SIG──¶§¤¢¬˜';
+
+  // 状态
+  let p4PageActive   = false;
+  let p4Countdown    = 15;
+  let p4CountHandle  = null;
+  let p4Pressing     = false;
+  let p4HoldTicks    = 0;         // 每次 scare 生成递增
+  let p4ScareHandle  = null;      // 80ms 定时器
+  let p4Destroyed    = false;
+
+  // ====== 日志填充 ======
+  function p4Pad(n){return String(n).padStart(2,'0')}
+  function p4RenderLog(){
+    const now = new Date();
+    const baseOffset = Math.floor(Math.random()*LOG_POOL.length);
+    const lines = [];
+    for(let i=0;i<9;i++){
+      const [msg,val,lev] = LOG_POOL[(baseOffset+i)%LOG_POOL.length];
+      const hh = p4Pad((now.getHours()+i)%24);
+      const mm = p4Pad((now.getMinutes()-i+60)%60);
+      const ss = p4Pad((now.getSeconds()-i*7+60)%60);
+      lines.push(`<div class="p4-log-line"><span class="p4-time">${hh}:${mm}:${ss}</span><span class="p4-msg">${msg}</span><span class="p4-lev ${lev}">${val}</span></div>`);
+    }
+    scrollBox.innerHTML = lines.join('');
+  }
+  p4RenderLog();
+  setInterval(p4RenderLog, 2600);
+
+  // ====== 乱码刷新 ======
+  function p4RenderGarble(){
+    const spans = garbleEl.querySelectorAll('span');
+    spans.forEach(s => {
+      let str = '';
+      const len = 5 + Math.floor(Math.random()*8);
+      for(let i=0;i<len;i++){
+        str += GARBLE_CHARS[Math.floor(Math.random()*GARBLE_CHARS.length)];
+      }
+      s.textContent = str;
+    });
+  }
+  p4RenderGarble();
+  setInterval(p4RenderGarble, 320);
+
+  // ====== 倒计时 ======
+  function p4UpdateCountdown(){
+    const mm = p4Pad(Math.floor(p4Countdown/60));
+    const ss = p4Pad(p4Countdown%60);
+    countEl.textContent = `${mm}:${ss}`;
+  }
+  function p4StartCountdown(){
+    p4StopCountdown();
+    p4CountHandle = setInterval(() => {
+      if(!p4PageActive || p4Destroyed) return;
+      p4Countdown--;
+      p4UpdateCountdown();
+      if(p4Countdown <= 0){
+        p4StopCountdown();
+        p4EnterChoice();
+      }
+    }, 1000);
+  }
+  function p4StopCountdown(){
+    if(p4CountHandle){ clearInterval(p4CountHandle); p4CountHandle = null; }
+  }
+  function p4ResetCountdown(){
+    p4Countdown = 15;
+    p4UpdateCountdown();
+  }
+  p4UpdateCountdown();
+
+  // ====== 长按凝视：80ms 生成一张恐怖图 ======
+  function p4SpawnScare(){
+    const rect = container.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    const sizePct = 0.3 + Math.random() * 0.3; // 30%-60%
+    const w = Math.max(rect.width, rect.height) * sizePct;
+    const h = w;
+    const top = Math.random() * (rect.height - h);
+    const left = Math.random() * (rect.width - w);
+    const img = SCARE_IMGS[Math.floor(Math.random()*SCARE_IMGS.length)];
+
+    const el = document.createElement('div');
+    el.className = 'p4-scare';
+    el.style.cssText = `top:${top}px;left:${left}px;width:${w}px;height:${h}px`;
+    el.innerHTML = `<img src="${img}" alt="" draggable="false">`;
+    container.appendChild(el);
+    setTimeout(() => { if(el.parentNode) el.remove(); }, 1400);
+
+    p4HoldTicks++;
+    // 满约 1.5s 触发崩坏（80ms * 19 ≈ 1.52s）
+    if(p4HoldTicks === 19){
+      container.classList.add('p4-glitch-broken');
+    }
+    if(p4HoldTicks >= 95){
+      // 约 7.6s 爆表，触发终末
+      p4Release();
+      p4EnterChoice();
+    }
+  }
+
+  function p4Press(event){
+    if(p4Destroyed) return;
+    if(event.type === 'mousedown' && event.button !== 0) return;
+    if(p4Pressing) return;
+    p4Pressing = true;
+    p4HoldTicks = 0;
+    p4ScareHandle = setInterval(p4SpawnScare, 80);
+    // 立即生成一张
+    p4SpawnScare();
+  }
+
+  function p4Release(){
+    p4Pressing = false;
+    if(p4ScareHandle){ clearInterval(p4ScareHandle); p4ScareHandle = null; }
+    container.classList.remove('p4-glitch-broken');
+    // 清理残留 scare
+    container.querySelectorAll('.p4-scare').forEach(el => el.remove());
+    // 加速倒计时：直接 +3 秒 / 步 的推进效果由 countdown interval 承担
+    if(p4Countdown > 1){
+      // 直接让下一轮倒计时"快进"一次，让用户感到加速
+      p4Countdown = Math.max(1, p4Countdown - 2);
+      p4UpdateCountdown();
+    }
+  }
+
+  stage.addEventListener('mousedown', p4Press);
+  stage.addEventListener('touchstart', p4Press, {passive:false});
+  window.addEventListener('mouseup', p4Release);
+  window.addEventListener('touchend', p4Release);
+  stage.addEventListener('keydown', e => {
+    if(e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); p4Press(e); }
+  });
+  stage.addEventListener('keyup', e => {
+    if(e.key === ' ' || e.key === 'Enter') p4Release();
+  });
+
+  // ====== 终末抉择 ======
+  function p4EnterChoice(){
+    if(p4Destroyed) return;
+    p4Destroyed = true;
+    p4StopCountdown();
+    p4Release();
+    container.classList.remove('p4-glitch-broken');
+    container.querySelectorAll('.p4-scare').forEach(el => el.remove());
+
+    // 黑屏 0.5s
+    const black = document.createElement('div');
+    black.className = 'p4-blackout';
+    black.setAttribute('aria-hidden','true');
+    container.appendChild(black);
+
+    setTimeout(() => {
+      black.remove();
+      const choice = document.createElement('div');
+      choice.className = 'p4-choice';
+      choice.innerHTML = `
+        <div class="p4-choice-title">// FINAL PROTOCOL //</div>
+        <div class="p4-choice-btns">
+          <button class="p4-accept" type="button">01 / ACCEPT</button>
+          <button class="p4-reject" type="button">02 / REJECT</button>
+        </div>
+        <div style="font-size:10px;color:#555;letter-spacing:.2em">NEURAL LINK ESTABLISHED ... CHOOSE DESTINY</div>
+      `;
+      container.appendChild(choice);
+      choice.querySelector('.p4-accept').addEventListener('click', p4Accept);
+      choice.querySelector('.p4-reject').addEventListener('click', p4Reject);
+    }, 500);
+  }
+
+  // ====== 通用打字机：段落逐个打出 ======
+  // parent: 容器节点；lines: 字符串数组；每字间隔 typeSpeed(ms)，段落间 gap(ms)
+  // onDone 全部结束回调
+  function p4Typewriter(parent, lines, typeSpeed, gap, onDone){
+    var i = 0, j = 0;
+    var cur = null;
+
+    function step(){
+      if(i >= lines.length){ if(onDone) onDone(); return; }
+      if(!cur){
+        cur = document.createElement('div');
+        cur.className = 'p4-line';
+        parent.appendChild(cur);
+      }
+      if(j <= lines[i].length){
+        cur.textContent = lines[i].substring(0, j);
+        // 光标闪烁用 \u2588 方块（CSS 里用 opacity 控制）
+        if(j < lines[i].length){
+          cur.textContent += '\u2588';
+        }
+        j++;
+        setTimeout(step, typeSpeed);
+      }else{
+        cur.textContent = lines[i];       // 去掉最后一个方块
+        cur.classList.add('visible');
+        i++; j = 0; cur = null;
+        setTimeout(step, gap);
+      }
+    }
+    step();
+  }
+
+  // ACCEPT：橙色淹没 → 打字机独白 → 虚无
+  function p4Accept(){
+    const choice = container.querySelector('.p4-choice');
+    if(choice) choice.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'p4-accept-overlay';
+
+    const textWrap = document.createElement('div');
+    textWrap.className = 'p4-accept-text';
+    overlay.appendChild(textWrap);
+    container.appendChild(overlay);
+
+    // 清理液态光标 & 浮动标题（防卡顿）
+    if(typeof window.stopLiquidCursor === 'function') window.stopLiquidCursor();
+
+    const lines = [
+      'A.T. 力场正在消融……',
+      '不再有误解，不再有伤害，\n个体的边界融化在温暖的海洋里。',
+      '逃避痛苦的最优解，\n就是让"我"消失。\n感觉真好。'
+    ];
+
+    // 橙底稳定 1s 后开始打字机
+    setTimeout(() => {
+      p4Typewriter(textWrap, lines, 60, 1000, () => {
+        // 打完 → 停留 3s → 虚无
+        setTimeout(() => {
+          overlay.classList.add('is-void');
+          // 虚无结束 → 静默 4s 后重置
+          setTimeout(() => {
+            overlay.remove();
+            if(typeof window.resumeLiquidCursor === 'function') window.resumeLiquidCursor();
+            p4Destroyed = false;
+            p4ResetCountdown();
+            p4RenderLog();
+            if(p4PageActive) p4StartCountdown();
+          }, 4000);
+        }, 3000);
+      });
+    }, 1000);
+  }
+
+  // REJECT：I NEED YOU + 震动 → 黑底打字机 → REBOOT 提示符
+  function p4Reject(){
+    const choice = container.querySelector('.p4-choice');
+    if(choice) choice.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'p4-reject-overlay';
+
+    // 第一层：I NEED YOU 大字闪白
+    const flash = document.createElement('div');
+    flash.className = 'p4-reject-text';
+    flash.textContent = 'I NEED YOU';
+    overlay.appendChild(flash);
+    container.appendChild(overlay);
+
+    if(typeof window.stopLiquidCursor === 'function') window.stopLiquidCursor();
+
+    // 强制全屏震动 + 红色边缘闪烁
+    container.classList.add('p4-glitch-broken');
+    container.style.animation = 'p4-shake .07s steps(1,end) infinite';
+
+    // 1.5s 后进入终端打字机模式
+    setTimeout(() => {
+      container.style.animation = '';
+      container.classList.remove('p4-glitch-broken');
+
+      // 替换为黑底终端
+      overlay.classList.add('is-terminal');
+
+      const termText = document.createElement('div');
+      termText.className = 'p4-terminal-text';
+      overlay.appendChild(termText);
+
+      const lines = [
+        '心之壁重新闭合。刺痛感再度袭来。',
+        '现实是残酷的，孤独和伤害不可避免。',
+        '但唯有保留这具丑陋的躯壳，\n我才能再次触碰真实的你。'
+      ];
+
+      p4Typewriter(termText, lines, 60, 1000, () => {
+        // 打完 → 停留 3s → 底部闪提示符
+        setTimeout(() => {
+          const reboot = document.createElement('div');
+          reboot.className = 'p4-reboot';
+          reboot.textContent = '> REBOOT SYSTEM // 点击任意处重新开始';
+          overlay.appendChild(reboot);
+
+          // 等待下一帧让 visible 生效（避免动画跳过）
+          requestAnimationFrame(() => reboot.classList.add('visible'));
+
+          function onRestart(){
+            document.removeEventListener('click', onRestart);
+            document.removeEventListener('keydown', onRestart);
+            overlay.remove();
+            if(typeof window.resumeLiquidCursor === 'function') window.resumeLiquidCursor();
+            p4Destroyed = false;
+            p4ResetCountdown();
+            p4RenderLog();
+            if(p4PageActive) p4StartCountdown();
+          }
+          // 全局 click 一次性重启（pointer-events 允许，overlay 在 container 内）
+          setTimeout(() => {
+            document.addEventListener('click', onRestart);
+            document.addEventListener('keydown', onRestart);
+          }, 100);
+        }, 3000);
+      });
+    }, 1500);
+  }
+
+  // ====== IntersectionObserver 进入/离开 ======
+  const obs = new IntersectionObserver(entries => {
+    const visible = entries[0].isIntersecting;
+    if(visible){
+      if(!p4PageActive){
+        // 完全重置：清所有残留 DOM + 类
+        container.classList.remove('p4-glitch-broken');
+        container.querySelectorAll('.p4-scare').forEach(el => el.remove());
+        container.querySelectorAll('.p4-blackout, .p4-choice, .p4-accept-overlay, .p4-reject-overlay')
+          .forEach(el => el.remove());
+        p4Destroyed = false;
+        p4Pressing = false;
+        p4HoldTicks = 0;
+        p4ResetCountdown();
+        p4RenderLog();
+        p4StartCountdown();
+      }
+    }else{
+      p4StopCountdown();
+      p4Release();
+    }
+    p4PageActive = visible;
+  }, {threshold:.45});
+  obs.observe(page);
+
+})();
+</script>
+
+<script>
+/* ====== P1 海报 3D 拖拽旋转（纯 mousedown/mousemove/mouseup） ====== */
+(function(){
+  var poster = document.getElementById('p1-poster');
+  if(!poster) return;
+
+  var SENSITIVITY = 0.35;   // 每像素 0.35°
+  var MAX_DEG     = 30;     // ±30° 限幅
+  var THRESHOLD   = 5;      // 5px 内视为点击
+
+  var startX = 0, startY = 0;
+  var baseRotX = 0, baseRotY = 0;
+  var currentRotX = 0, currentRotY = 0;
+  var didDrag = false;
+  var pressed = false;
+  var rafId = null;
+
+  function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+  function apply(){
+    poster.style.transform = 'rotateX(' + currentRotX + 'deg) rotateY(' + currentRotY + 'deg)';
+  }
+
+  function onMouseDown(e){
+    if(e.button !== 0) return;
+    e.preventDefault();
+    pressed = true;
+    didDrag = false;
+    startX = e.clientX;
+    startY = e.clientY;
+    baseRotX = currentRotX;
+    baseRotY = currentRotY;
+    cancelAnimationFrame(rafId);
+    poster.classList.add('is-dragging');
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }
+
+  function onMouseMove(e){
+    if(!pressed) return;
+    var dx = e.clientX - startX;
+    var dy = e.clientY - startY;
+    var dist = Math.hypot(dx, dy);
+
+    if(!didDrag){
+      if(dist < THRESHOLD) return;
+      didDrag = true;
+      // 跨过阈值瞬间把当前 rotation 作为新基准（支持回弹中途再按下）
+      baseRotX = currentRotX;
+      baseRotY = currentRotY;
+    }
+
+    // rotateY ↔ 水平位移；rotateX ↔ 垂直位移（注意 Y 轴反向）
+    currentRotY = clamp(baseRotY + dx * SENSITIVITY, -MAX_DEG, MAX_DEG);
+    currentRotX = clamp(baseRotX - dy * SENSITIVITY, -MAX_DEG, MAX_DEG);
+    apply();
+  }
+
+  function onMouseUp(){
+    pressed = false;
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+    if(didDrag){
+      startSpring();
+    }else{
+      currentRotX = 0; currentRotY = 0;
+      apply();
+      poster.classList.remove('is-dragging');
+    }
+  }
+
+  function startSpring(){
+    cancelAnimationFrame(rafId);
+    function tick(){
+      currentRotX *= 0.82;
+      currentRotY *= 0.82;
+      apply();
+      if(Math.abs(currentRotX) > 0.04 || Math.abs(currentRotY) > 0.04){
+        rafId = requestAnimationFrame(tick);
+      }else{
+        currentRotX = 0; currentRotY = 0;
+        apply();
+        poster.classList.remove('is-dragging');
+      }
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  // 触屏等价路径
+  function onTouchStart(e){
+    if(e.touches.length !== 1) return;
+    e.preventDefault();
+    var t = e.touches[0];
+    pressed = true; didDrag = false;
+    startX = t.clientX; startY = t.clientY;
+    baseRotX = currentRotX; baseRotY = currentRotY;
+    cancelAnimationFrame(rafId);
+    poster.classList.add('is-dragging');
+    document.addEventListener('touchmove', onTouchMove, {passive:false});
+    document.addEventListener('touchend', onTouchEnd);
+  }
+  function onTouchMove(e){
+    if(!pressed || e.touches.length !== 1) return;
+    e.preventDefault();
+    var t = e.touches[0];
+    var dx = t.clientX - startX;
+    var dy = t.clientY - startY;
+    if(!didDrag && Math.hypot(dx, dy) >= THRESHOLD){
+      didDrag = true;
+      baseRotX = currentRotX; baseRotY = currentRotY;
+    }
+    if(didDrag){
+      currentRotY = clamp(baseRotY + dx * SENSITIVITY, -MAX_DEG, MAX_DEG);
+      currentRotX = clamp(baseRotX - dy * SENSITIVITY, -MAX_DEG, MAX_DEG);
+      apply();
+    }
+  }
+  function onTouchEnd(){
+    pressed = false;
+    document.removeEventListener('touchmove', onTouchMove);
+    document.removeEventListener('touchend', onTouchEnd);
+    if(didDrag) startSpring();
+    else { currentRotX = 0; currentRotY = 0; apply(); poster.classList.remove('is-dragging'); }
+  }
+
+  poster.addEventListener('mousedown', onMouseDown);
+  poster.addEventListener('touchstart', onTouchStart, {passive:false});
+})();
+</script>
+
+<script>
+/* ====== 浮动剧集标题背景 ====== */
+(function(){
+  var ALL_TITLES = [
+    "使徒、来袭", "陌生的天花板", "不响的电话", "下雨、出走以后",
+    "丽、心彼方", "决战、第3新东京市", "人所制造之物", "明日香、来日",
+    "瞬间、心重合", "岩浆潜水员", "静止的黑暗之中", "奇迹的价值",
+    "使徒、侵入", "Seele、魂之座", "谎言与沉默", "致死的疾病、以及…",
+    "第四适格者", "生命的选择", "男人的战斗", "心之形、人之形",
+    "NERV、诞生", "至少、像个人样", "眼泪", "最后的使者",
+    "结束的世界", "在世界中心呼喊爱的野兽"
+  ];
+
+  var PAGE_COUNT = 4;
+  var DRAG_THRESHOLD = 5;    // 点击/拖拽分界
+  var layer = null;
+  var ticking = false;       // rAF 节流标记
+  var pendingUpdates = [];   // 本轮要更新 transform 的节点队列
+
+  /**
+   * 分均标题到 4 页：前 24 页每 6 条，最后 1 页 8 条
+   */
+  function getPageTitles(pageIndex){
+    if(pageIndex < 0 || pageIndex >= PAGE_COUNT) return [];
+    var perPage = Math.floor(ALL_TITLES.length / PAGE_COUNT); // 6
+    if(pageIndex === PAGE_COUNT - 1){
+      // 最后一页吃剩余：26 - 6*3 = 8 条
+      return ALL_TITLES.slice(perPage * pageIndex);
+    }
+    return ALL_TITLES.slice(perPage * pageIndex, perPage * (pageIndex + 1));
+  }
+
+  function rand(a, b){ return a + Math.random() * (b - a); }
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+  /**
+   * 生成一页的标题节点并注入 layer
+   */
+  window.initFloatingTitles = function(pageIndex){
+    if(!layer){
+      layer = document.getElementById('ft-layer');
+      if(!layer){ console.warn('ft-layer not found'); return; }
+    }
+
+    // 清空上一页（只清我们自己的节点，layer 不会有别的东西）
+    layer.innerHTML = '';
+
+    var titles = getPageTitles(pageIndex);
+    if(!titles.length) return;
+
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+
+    titles.forEach(function(text, idx){
+      var el = document.createElement('div');
+      el.className = 'ft-title';
+      el.textContent = text;
+
+      // 随机字号：16–42px
+      var fontSize = Math.round(rand(16, 42));
+      el.style.fontSize = fontSize + 'px';
+
+      // 随机旋转角（存到节点数据里，拖拽时保持）
+      var rot = rand(-8, 8);
+
+      // 随机位置：left/top 是锚点，transform 只承载 translate + 旋转
+      el.style.left = rand(0, Math.max(0, vw - 100)) + 'px';
+      el.style.top  = rand(0, Math.max(0, vh - 40)) + 'px';
+
+      // 存入拖拽态（所有状态集中到 __ft 命名空间，避免全局污染）
+      el.__ft = {
+        x: 0, y: 0,
+        prevX: 0, prevY: 0,
+        downX: 0, downY: 0,
+        didDrag: false,
+        glowOn: false,
+        rot: rot,                // 初始随机旋转，拖拽时保持
+        w: 0, h: 0
+      };
+
+      // 初始 transform 只用 rotate
+      el.style.transform = 'rotate(' + rot.toFixed(1) + 'deg)';
+
+      // 事件链：stopPropagation 阻止冒泡到底层（关键防冲突）
+      el.addEventListener('mousedown', onTitleDown);
+      el.addEventListener('click', onTitleClick);
+
+      layer.appendChild(el);
+
+      // 读后测量尺寸（boundary clamping 需要）
+      requestAnimationFrame(function(node){
+        node.__ft.w = node.offsetWidth;
+        node.__ft.h = node.offsetHeight;
+      }.bind(null, el));
+    });
+  };
+
+  // ====== 拖拽事件处理 ======
+  function onTitleDown(e){
+    e.stopPropagation();   // 关键：不让 mousedown 冒泡到底层
+    if(e.button !== 0) return;
+
+    var el = e.currentTarget;
+    var st = el.__ft;
+    st.downX = e.clientX;
+    st.downY = e.clientY;
+    st.prevX = st.x;
+    st.prevY = st.y;
+    st.didDrag = false;
+
+    el.classList.add('is-dragging');
+
+    document.addEventListener('mousemove', onTitleMove);
+    document.addEventListener('mouseup', onTitleUp);
+  }
+
+  function onTitleMove(e){
+    // 找到当前正在拖的那个（is-dragging 的）
+    var dragging = layer.querySelector('.ft-title.is-dragging');
+    if(!dragging) return;
+    var st = dragging.__ft;
+
+    var dx = e.clientX - st.downX;
+    var dy = e.clientY - st.downY;
+    var dist = Math.hypot(dx, dy);
+
+    if(!st.didDrag && dist >= DRAG_THRESHOLD){
+      st.didDrag = true;
+    }
+
+    if(st.didDrag){
+      // 边界限制（基于节点锚点 + transform 偏移）
+      var vw = window.innerWidth;
+      var vh = window.innerHeight;
+      var anchorLeft = parseFloat(dragging.style.left) || 0;
+      var anchorTop  = parseFloat(dragging.style.top)  || 0;
+
+      var newX = st.prevX + dx;
+      var newY = st.prevY + dy;
+
+      // transform translate 限制：anchor + translate + node 尺寸必须在视口内
+      newX = clamp(newX, -anchorLeft, vw - anchorLeft - (st.w || 80));
+      newY = clamp(newY, -anchorTop,  vh - anchorTop  - (st.h || 30));
+
+      st.x = newX;
+      st.y = newY;
+
+      // rAF 节流写入 DOM（用 transform:translate，不改 left/top）
+      if(!ticking){
+        ticking = true;
+        requestAnimationFrame(function(){
+          var d = dragging.__ft;
+          dragging.style.transform = 'translate(' + d.x + 'px,' + d.y + 'px) rotate(' + d.rot.toFixed(1) + 'deg)';
+          ticking = false;
+        });
+      }
+    }
+  }
+
+  function onTitleUp(e){
+    document.removeEventListener('mousemove', onTitleMove);
+    document.removeEventListener('mouseup', onTitleUp);
+
+    var dragging = layer.querySelector('.ft-title.is-dragging');
+    if(dragging){
+      dragging.classList.remove('is-dragging');
+    }
+  }
+
+  function onTitleClick(e){
+    // 拖拽不触发 click → didDrag 过的节点直接忽略
+    var el = e.currentTarget;
+    if(el.__ft && el.__ft.didDrag){
+      e.stopPropagation();
+      return;
+    }
+    e.stopPropagation();     // 不让 click 冒泡到全局
+
+    // 切换发光态
+    el.classList.toggle('is-glowing');
+    el.__ft.glowOn = el.classList.contains('is-glowing');
+  }
+
+  // 首次初始化
+  window.initFloatingTitles(0);
+
+  // 视口改变时重新布局（可选，保持当前偏移，只对新生成的节点有用）
+  window.addEventListener('resize', function(){
+    // 只在页面稳定后触发，避免拖拽中重排
+    if(!layer.querySelector('.ft-title.is-dragging')){
+      // 重新初始化当前页（通过 body 的 page-N 类推断）
+      var cls = document.body.className || '';
+      var m = cls.match(/page-(\d)/);
+      if(m) window.initFloatingTitles(parseInt(m[1]) - 1);
+    }
+  });
+})();
+</script>
+
+<script>
+/* ====== 全局液态凹陷鼠标特效 ====== */
+(function(){
+  var layer = document.getElementById('liquid-cursor-layer');
+  if(!layer){ console.warn('liquid-cursor-layer not found'); return; }
+
+  var THRESHOLD = 28;      // 每次生成节点的最小移动距离（px）
+  var MAX_NODES = 6;       // 屏幕上同时存在的最大节点数（防过多 backdrop-filter）
+  var rAFWaiting = false;  // rAF 节流标记
+  var lastX = 0, lastY = 0;
+  var initialized = false;
+  var activeNodes = [];    // 现存节点引用（便于限数清理）
+
+  function generate(x, y){
+    // 限数：如果已到上限，把最旧的那个强制移除
+    if(activeNodes.length >= MAX_NODES){
+      var oldest = activeNodes.shift();
+      if(oldest && oldest.parentNode) oldest.remove();
+    }
+
+    var node = document.createElement('div');
+    node.className = 'dimple-node';
+    node.style.left = x + 'px';
+    node.style.top  = y + 'px';
+
+    // 回收：CSS animationend 后移除 DOM（双重保险：timeout 兜底）
+    node.addEventListener('animationend', function onEnd(e){
+      if(e.animationName !== 'dimple-breathe') return;
+      node.removeEventListener('animationend', onEnd);
+      if(node.parentNode) node.remove();
+      // 从活跃列表移除
+      var i = activeNodes.indexOf(node);
+      if(i >= 0) activeNodes.splice(i, 1);
+    });
+
+    // 兜底 1.5s 强制移除（防止某些浏览器 animationend 不触发）
+    setTimeout(function(){
+      if(node.parentNode){
+        node.remove();
+        var i = activeNodes.indexOf(node);
+        if(i >= 0) activeNodes.splice(i, 1);
+      }
+    }, 1500);
+
+    layer.appendChild(node);
+    activeNodes.push(node);
+  }
+
+  function onMouseMove(e){
+    // 全局开关：body.stop-liquid 时完全跳过
+    if(document.body.classList.contains('stop-liquid')) return;
+
+    var x = e.clientX;
+    var y = e.clientY;
+
+    if(!initialized){
+      // 第一次：只记录起点，不生成
+      lastX = x; lastY = y;
+      initialized = true;
+      return;
+    }
+
+    var dx = x - lastX;
+    var dy = y - lastY;
+    var dist = Math.hypot(dx, dy);
+
+    // 距离不足 → 不生成
+    if(dist < THRESHOLD) return;
+
+    // 更新基准点为鼠标当前位置（每次跨过阈值都从这里重新算距离）
+    lastX = x;
+    lastY = y;
+
+    // rAF 节流：每帧最多生成一次
+    if(!rAFWaiting){
+      rAFWaiting = true;
+      requestAnimationFrame(function(){
+        rAFWaiting = false;
+        generate(x, y);
+      });
+    }
+  }
+
+  // 页面隐藏时停止（切到后台省性能）
+  function onVisibilityChange(){
+    if(document.hidden){
+      // 清掉所有残留节点
+      layer.innerHTML = '';
+      activeNodes.length = 0;
+    }
+  }
+
+  document.addEventListener('mousemove', onMouseMove, {passive:true});
+  document.addEventListener('visibilitychange', onVisibilityChange);
+
+  // 暴露开关接口（便于第 4 页高频闪烁时临时关闭）
+  window.stopLiquidCursor = function(){
+    document.body.classList.add('stop-liquid');
+    layer.innerHTML = '';
+    activeNodes.length = 0;
+  };
+  window.resumeLiquidCursor = function(){
+    document.body.classList.remove('stop-liquid');
+    initialized = false;
+  };
+})();
+</script>
+</body>
+</html>

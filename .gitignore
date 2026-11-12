@@ -1,0 +1,55 @@
+# build output
+dist/
+
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# environment variables
+.env
+.env.production
+
+# macOS
+.DS_Store
+
+# === 仅部署 eva.html 主站点 ===
+# 临时/调试 HTML
+_check.html
+_check2.html
+_check3.html
+_check4.html
+index.html
+
+# 临时截图
+_*.png
+!lilith.png
+
+# 备用独立页面
+nerv-terminal.html
+
+# Python 脚本
+*.py
+
+# 数据分析/项目文件
+gantt_chart.png
+package.json
+package-lock.json
+tsconfig.json
+astro.config.mjs
+
+# Office 文档（绝不上传）
+*.pptx
+*.ppt
+*.pdf
+*.doc
+*.docx
+*.xls
+*.xlsx
